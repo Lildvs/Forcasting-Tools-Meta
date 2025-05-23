@@ -146,9 +146,16 @@ class Q2TemplateBot2025(ForecastBot):
         # Apply thinking configuration if available
         thinking_config = self.personality_manager.get_thinking_config()
         
+        # Filter out unsupported parameters - temperature is handled in the GeneralLlm constructor
+        filtered_config = {}
+        if thinking_config:
+            for key, value in thinking_config.items():
+                if key != 'temperature':  # Skip temperature as it's set in the constructor
+                    filtered_config[key] = value
+        
         reasoning = await self.get_llm("default", "llm").invoke(
             prompt, 
-            **thinking_config if thinking_config else {}
+            **filtered_config
         )
         
         logger.info(f"Reasoning for URL {question.page_url}: {reasoning}")
@@ -180,9 +187,16 @@ class Q2TemplateBot2025(ForecastBot):
         # Apply thinking configuration if available
         thinking_config = self.personality_manager.get_thinking_config()
         
+        # Filter out unsupported parameters - temperature is handled in the GeneralLlm constructor
+        filtered_config = {}
+        if thinking_config:
+            for key, value in thinking_config.items():
+                if key != 'temperature':  # Skip temperature as it's set in the constructor
+                    filtered_config[key] = value
+        
         reasoning = await self.get_llm("default", "llm").invoke(
             prompt, 
-            **thinking_config if thinking_config else {}
+            **filtered_config
         )
         
         logger.info(f"Reasoning for URL {question.page_url}: {reasoning}")
@@ -222,9 +236,16 @@ class Q2TemplateBot2025(ForecastBot):
         # Apply thinking configuration if available
         thinking_config = self.personality_manager.get_thinking_config()
         
+        # Filter out unsupported parameters - temperature is handled in the GeneralLlm constructor
+        filtered_config = {}
+        if thinking_config:
+            for key, value in thinking_config.items():
+                if key != 'temperature':  # Skip temperature as it's set in the constructor
+                    filtered_config[key] = value
+        
         reasoning = await self.get_llm("default", "llm").invoke(
             prompt, 
-            **thinking_config if thinking_config else {}
+            **filtered_config
         )
         
         logger.info(f"Reasoning for URL {question.page_url}: {reasoning}")
