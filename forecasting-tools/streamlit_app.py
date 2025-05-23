@@ -34,6 +34,33 @@ if 'forecast_history' not in st.session_state:
 def format_cost(cost):
     return f"${cost:.4f}"
 
+# Function to create a CostTrackingBot with proper parameter handling
+def create_cost_tracking_bot(model_name=None, personality_name=None):
+    """
+    Create a CostTrackingBot instance with proper parameter handling.
+    
+    Args:
+        model_name: The name of the model to use
+        personality_name: The name of the personality to use
+        
+    Returns:
+        A CostTrackingBot instance
+    """
+    # Create a default LLM config with the specified model
+    llms = None
+    if model_name:
+        llms = {
+            "default": GeneralLlm(model=model_name, temperature=0.1),
+            "summarizer": GeneralLlm(model=model_name, temperature=0.1),
+        }
+    
+    # Create the bot with the proper parameters
+    return CostTrackingBot(
+        llms=llms,
+        personality_name=personality_name,
+        cost_tracker=st.session_state.cost_tracker
+    )
+
 # CSS for the total cost badge in the top right
 # This uses custom CSS to position the element
 st.markdown("""
@@ -340,33 +367,6 @@ with st.sidebar:
     st.caption(
         "Note: Costs are calculated based on estimated token usage and may vary slightly "
         "from actual charges by API providers."
-    )
-
-# Function to create a CostTrackingBot with proper parameter handling
-def create_cost_tracking_bot(model_name=None, personality_name=None):
-    """
-    Create a CostTrackingBot instance with proper parameter handling.
-    
-    Args:
-        model_name: The name of the model to use
-        personality_name: The name of the personality to use
-        
-    Returns:
-        A CostTrackingBot instance
-    """
-    # Create a default LLM config with the specified model
-    llms = None
-    if model_name:
-        llms = {
-            "default": GeneralLlm(model=model_name, temperature=0.1),
-            "summarizer": GeneralLlm(model=model_name, temperature=0.1),
-        }
-    
-    # Create the bot with the proper parameters
-    return CostTrackingBot(
-        llms=llms,
-        personality_name=personality_name,
-        cost_tracker=st.session_state.cost_tracker
     )
 
 # Run the app with: streamlit run streamlit_app.py 
