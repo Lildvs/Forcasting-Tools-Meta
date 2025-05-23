@@ -8,6 +8,7 @@ import os
 
 from forecasting_tools.data_models.questions import BinaryQuestion, NumericQuestion
 from forecasting_tools.cost_tracking import CostTrackingBot, CostTracker
+from forecasting_tools.ai_models.general_llm import GeneralLlm
 
 # Configure the page
 st.set_page_config(
@@ -113,10 +114,8 @@ with tab1:
         # Show a spinner while forecasting
         with st.spinner("Generating forecast..."):
             # Initialize the bot
-            bot = CostTrackingBot(
-                personality_name=None if personality_name == "None" else personality_name,
-                model_name=model_name
-            )
+            processed_personality = None if personality_name == "None" else personality_name
+            bot = create_cost_tracking_bot(model_name=model_name, personality_name=processed_personality)
             
             # Create question object
             if question_type == "Binary":
@@ -341,6 +340,33 @@ with st.sidebar:
     st.caption(
         "Note: Costs are calculated based on estimated token usage and may vary slightly "
         "from actual charges by API providers."
+    )
+
+# Function to create a CostTrackingBot with proper parameter handling
+def create_cost_tracking_bot(model_name=None, personality_name=None):
+    """
+    Create a CostTrackingBot instance with proper parameter handling.
+    
+    Args:
+        model_name: The name of the model to use
+        personality_name: The name of the personality to use
+        
+    Returns:
+        A CostTrackingBot instance
+    """
+    # Create a default LLM config with the specified model
+    llms = None
+    if model_name:
+        llms = {
+            "default": GeneralLlm(model=model_name, temperature=0.1),
+            "summarizer": GeneralLlm(model=model_name, temperature=0.1),
+        }
+    
+    # Create the bot with the proper parameters
+    return CostTrackingBot(
+        llms=llms,
+        personality_name=personality_name,
+        cost_tracker=st.session_state.cost_tracker
     )
 
 # Run the app with: streamlit run streamlit_app.py 
