@@ -23,7 +23,8 @@ from forecasting_tools.data_models.questions import (
     NumericQuestion,
 )
 from forecasting_tools.forecast_bots.forecast_bot import ForecastBot
-from forecasting_tools.forecast_helpers.perplexity_searcher import Perplexity
+from forecasting_tools.forecast_helpers.perplexity_searcher import PerplexitySearcher
+from forecasting_tools.ai_models.deprecated_model_classes.perplexity import Perplexity
 from forecasting_tools.forecast_helpers.prediction_extractor import PredictionExtractor
 from forecasting_tools.personality_templates import PersonalityManager
 
