@@ -45,8 +45,12 @@ class PersonalityManager:
         else:
             self.personalities_dir = Path(personalities_dir)
             
-        # Initialize template manager
-        self.template_manager = TemplateManager(templates_dir)
+        # Initialize template manager (singleton pattern, ignores templates_dir)
+        self.template_manager = TemplateManager()
+        
+        # Add custom templates directory if provided
+        if templates_dir is not None:
+            self.template_manager.add_template_directory(templates_dir)
         
         # Cache for loaded personalities
         self._personality_cache: Dict[str, PersonalityConfig] = {}
