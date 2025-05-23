@@ -18,6 +18,9 @@ from forecasting_tools.data_models.numeric_report import NumericReport
 from forecasting_tools.cost_tracking import CostTrackingBot, CostTracker
 from forecasting_tools.ai_models.general_llm import GeneralLlm
 
+# Import LLM configuration
+from forecasting_tools.llm_config import LLMConfigManager
+
 # Import reasoning modules
 from forecasting_tools.forecast_bots.reasoning import (
     ConfidenceLevel,
@@ -94,9 +97,12 @@ def create_cost_tracking_bot(model_name=None, personality_name=None):
     # Create a default LLM config with the specified model
     llms = None
     if model_name:
+        # Use the new LLMConfigManager for default settings
+        config = LLMConfigManager.get_default_config()
         llms = {
-            "default": GeneralLlm(model=model_name, temperature=0.1),
-            "summarizer": GeneralLlm(model=model_name, temperature=0.1),
+            "default": GeneralLlm(model=model_name, temperature=0.3),
+            "summarizer": GeneralLlm(model=config["summarizer"]["model"], temperature=0.1),
+            "researcher": GeneralLlm(model=config["researcher"]["model"], temperature=0.1),
         }
     
     # Create the bot with the proper parameters
@@ -159,9 +165,19 @@ with tab1:
         # Model and personality selection
         col1, col2, col3 = st.columns(3)
         with col1:
+            # Get models from LLMConfigManager
+            config = LLMConfigManager.get_default_config()
+            default_models = [
+                "gpt-4.1",  # Latest default from config
+                "gpt-4o",
+                "gpt-4o-mini",
+                "claude-3-opus",
+                "claude-3-sonnet",
+                "claude-3-haiku"
+            ]
             model_name = st.selectbox(
                 "Model", 
-                ["gpt-4", "gpt-3.5-turbo", "claude-3-opus", "claude-3-sonnet", "claude-3-haiku"]
+                default_models
             )
         with col2:
             personality_name = st.selectbox(

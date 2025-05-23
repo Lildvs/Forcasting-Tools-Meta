@@ -20,6 +20,8 @@ from forecasting_tools.front_end.helpers.tool_page import ToolPage
 from forecasting_tools.front_end.helpers.personality_selector import PersonalitySelector
 from forecasting_tools.personality_management import PersonalityManager
 from forecasting_tools.util.jsonable import Jsonable
+from forecasting_tools.llm_config import LLMConfigManager
+from forecasting_tools.ai_models.general_llm import GeneralLlm
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
 class ForecastInput(Jsonable, BaseModel):
     question: BinaryQuestion
     personality_name: str = "balanced"
+    model_name: str = "gpt-4.1"  # Updated default to latest version
 
 
 class ForecasterPage(ToolPage):
@@ -84,6 +87,24 @@ class ForecasterPage(ToolPage):
             filter_by_domain = domain
             st.info(f"Based on the selected domain, we recommend personalities optimized for {domain} forecasting.")
         
+        # Add model selection dropdown
+        # Get models from LLMConfigManager
+        config = LLMConfigManager.get_default_config()
+        default_models = [
+            "gpt-4.1",  # Latest default from config
+            "gpt-4o",
+            "gpt-4o-mini",
+            "claude-3-opus",
+            "claude-3-sonnet",
+            "claude-3-haiku"
+        ]
+        selected_model = st.selectbox(
+            "Select LLM Model:",
+            options=default_models,
+            index=0,
+            help="Select the model to use for forecasting. GPT-4.1 is recommended for best results."
+        )
+        
         # Add personality selector
         selected_personality = PersonalitySelector.display_selector(
             key_prefix=cls.PERSONALITY_SELECTION,
@@ -125,20 +146,33 @@ class ForecasterPage(ToolPage):
                 )
                 return ForecastInput(
                     question=question,
-                    personality_name=personality_name
+                    personality_name=personality_name,
+                    model_name=selected_model
                 )
         return None
 
     @classmethod
     async def _run_tool(cls, input: ForecastInput) -> BinaryReport:
-        with st.spinner(f"Forecasting with {input.personality_name} personality... This may take a minute or two..."):
-            # Create a bot with the selected personality
+        with st.spinner(f"Forecasting with {input.personality_name} personality using {input.model_name}... This may take a minute or two..."):
+            # Create a bot with the selected personality and model
+            # Get default settings from LLMConfigManager
+            config = LLMConfigManager.get_default_config()
+            
+            # Create custom LLM configuration
+            llms = {
+                "default": GeneralLlm(model=input.model_name, temperature=0.3),
+                "summarizer": GeneralLlm(model=config["summarizer"]["model"], temperature=0.1),
+                "researcher": GeneralLlm(model=config["researcher"]["model"], temperature=0.1),
+            }
+            
+            # Create bot with custom configuration
             bot = MainBot(
                 research_reports_per_question=1,
                 predictions_per_research_report=5,
                 publish_reports_to_metaculus=False,
                 folder_to_save_reports_to=None,
-                personality_name=input.personality_name
+                personality_name=input.personality_name,
+                llms=llms
             )
             
             # Display personality preview
