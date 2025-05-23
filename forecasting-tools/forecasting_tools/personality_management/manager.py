@@ -221,3 +221,15 @@ class PersonalityManager:
             The current personality configuration, or None if none is loaded
         """
         return self._current_personality 
+        
+    @property
+    def personality_name(self) -> Optional[str]:
+        """
+        Get the name of the current personality.
+        
+        Returns:
+            The name of the current personality, or None if none is loaded
+        """
+        if self._current_personality:
+            return self._current_personality.name
+        return None 
