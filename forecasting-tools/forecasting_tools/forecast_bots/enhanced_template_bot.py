@@ -12,10 +12,10 @@ from typing import Optional
 
 from forecasting_tools.ai_models.general_llm import GeneralLlm
 from forecasting_tools.data_models.forecast_report import (
-    PredictedOptionList,
     ReasonedPrediction,
 )
 from forecasting_tools.data_models.numeric_report import NumericDistribution
+from forecasting_tools.data_models.multiple_choice_report import PredictedOptionList
 from forecasting_tools.data_models.questions import (
     BinaryQuestion,
     MetaculusQuestion,
