@@ -5,10 +5,49 @@ from datetime import datetime, timedelta
 import uuid
 from pathlib import Path
 import os
+import inspect
+from typing import Optional, Dict, Any, List, Tuple, Union
 
+# Import data models
 from forecasting_tools.data_models.questions import BinaryQuestion, NumericQuestion
+from forecasting_tools.data_models.forecast_report import ReasonedPrediction
+from forecasting_tools.data_models.binary_report import BinaryReport
+from forecasting_tools.data_models.numeric_report import NumericReport
+
+# Import cost tracking
 from forecasting_tools.cost_tracking import CostTrackingBot, CostTracker
 from forecasting_tools.ai_models.general_llm import GeneralLlm
+
+# Import reasoning modules
+from forecasting_tools.forecast_bots.reasoning import (
+    ConfidenceLevel,
+    Evidence, 
+    EvidenceType,
+    StructuredReasoning, 
+    create_reasoning_for_question
+)
+
+# Import our UI components
+from forecasting_tools.front_end.components.probability_visualization import (
+    display_binary_forecast,
+    display_numeric_forecast,
+    create_binary_probability_chart,
+    create_numeric_distribution_chart
+)
+from forecasting_tools.front_end.components.research_sources import (
+    display_research_sources,
+    display_reasoning_steps,
+    display_biases_and_uncertainties
+)
+from forecasting_tools.front_end.components.confidence_display import (
+    display_confidence_breakdown,
+    create_confidence_gauge
+)
+from forecasting_tools.front_end.components.ui_utils import (
+    load_css,
+    display_info_box,
+    create_card
+)
 
 # Configure the page
 st.set_page_config(
@@ -17,6 +56,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Load custom CSS
+css_path = Path(__file__).parent / "forecasting_tools" / "front_end" / "components" / "styles.css"
+if css_path.exists():
+    with open(css_path, "r") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Initialize session state
 if 'cost_tracker' not in st.session_state:
@@ -100,7 +145,7 @@ st.markdown(
 )
 
 # Create tabs
-tab1, tab2 = st.tabs(["Forecasting", "Cost History"])
+tab1, tab2, tab3 = st.tabs(["Forecasting", "Research Explorer", "Cost History"])
 
 with tab1:
     st.title("Forecasting Tool")
@@ -112,7 +157,7 @@ with tab1:
         background_info = st.text_area("Background Information (optional)", "")
         
         # Model and personality selection
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             model_name = st.selectbox(
                 "Model", 
@@ -123,6 +168,8 @@ with tab1:
                 "Personality", 
                 ["None", "analytical", "creative", "balanced", "bayesian"]
             )
+        with col3:
+            confidence_display = st.checkbox("Show Confidence Analysis", value=True)
         
         # Numeric question specific inputs (shown conditionally)
         if question_type == "Numeric":
@@ -155,12 +202,82 @@ with tab1:
                 # Generate forecast
                 forecast = bot.forecast_binary(question)
                 
-                # Display the result
+                # Display the result using our components
                 st.subheader("Forecast Result")
-                st.write(f"Probability: {forecast.binary_prob:.2%}")
-                st.write("Reasoning:")
-                st.write(forecast.reasoning)
                 
+                # Extract research from reasoning if available
+                research = ""
+                reasoning = forecast.reasoning
+                if "## Research" in reasoning:
+                    parts = reasoning.split("## Research", 1)
+                    if len(parts) > 1:
+                        research_section = "## Research" + parts[1].split("##", 1)[0]
+                        research = research_section
+                
+                # Create a structured reasoning object for the forecast
+                structured_reasoning = create_reasoning_for_question(question)
+                
+                # Create mock reasoning steps from the forecast reasoning
+                reasoning_steps = []
+                if "##" in reasoning:
+                    sections = reasoning.split("##")
+                    for i, section in enumerate(sections[1:], 1):  # Skip the first empty part
+                        section_title = section.split("\n", 1)[0].strip()
+                        section_content = section.split("\n", 1)[1].strip() if "\n" in section else ""
+                        reasoning_steps.append({
+                            "title": f"Step {i}",
+                            "type": section_title,
+                            "content": section_content
+                        })
+                
+                # Display using our visualization component
+                display_binary_forecast(
+                    probability=forecast.prediction,
+                    reasoning=reasoning,
+                    community_prediction=question.community_prediction_at_access_time
+                )
+                
+                # Display confidence information if requested
+                if confidence_display:
+                    st.markdown("### Confidence Analysis")
+                    
+                    # Create mock confidence scores
+                    component_scores = {
+                        "evidence_quality": 0.75,
+                        "reasoning_process": 0.8,
+                        "relevant_expertise": 0.7,
+                        "information_recency": 0.6,
+                        "bias_consideration": 0.65
+                    }
+                    
+                    # Display confidence breakdown
+                    display_confidence_breakdown(
+                        component_scores=component_scores,
+                        overall_confidence=0.7,
+                        strengths=["Strong evidence quality", "Thorough reasoning process"],
+                        weaknesses=["Limited information recency"]
+                    )
+                
+                # Display research sources if available
+                if research:
+                    display_research_sources(
+                        research=research,
+                        allow_filtering=True
+                    )
+                
+                # Display reasoning steps
+                if reasoning_steps:
+                    display_reasoning_steps(
+                        steps=reasoning_steps,
+                        expand_all=False
+                    )
+                    
+                    # Display mock biases and uncertainties
+                    display_biases_and_uncertainties(
+                        biases=["Recency bias", "Confirmation bias", "Availability bias"],
+                        uncertainties=["Future technological advancements", "Economic policy changes", "COVID-19 long-term impact"]
+                    )
+            
             else:  # Numeric
                 question = NumericQuestion(
                     question_text=question_text,
@@ -174,23 +291,199 @@ with tab1:
                 # Generate forecast
                 forecast = bot.forecast_numeric(question)
                 
-                # Display the result
-                st.subheader("Forecast Result")
-                st.write(f"Mean: {forecast.mean} {unit}")
-                st.write(f"Range: {forecast.low} - {forecast.high} {unit}")
-                st.write("Reasoning:")
-                st.write(forecast.reasoning)
+                # Extract research from reasoning if available
+                research = ""
+                reasoning = forecast.reasoning
+                if "## Research" in reasoning:
+                    parts = reasoning.split("## Research", 1)
+                    if len(parts) > 1:
+                        research_section = "## Research" + parts[1].split("##", 1)[0]
+                        research = research_section
+                
+                # Create mock reasoning steps from the forecast reasoning
+                reasoning_steps = []
+                if "##" in reasoning:
+                    sections = reasoning.split("##")
+                    for i, section in enumerate(sections[1:], 1):  # Skip the first empty part
+                        section_title = section.split("\n", 1)[0].strip()
+                        section_content = section.split("\n", 1)[1].strip() if "\n" in section else ""
+                        reasoning_steps.append({
+                            "title": f"Step {i}",
+                            "type": section_title,
+                            "content": section_content
+                        })
+                
+                # Display using our visualization component
+                display_numeric_forecast(
+                    mean=forecast.mean,
+                    low=forecast.low,
+                    high=forecast.high,
+                    reasoning=reasoning,
+                    unit=unit
+                )
+                
+                # Display confidence information if requested
+                if confidence_display:
+                    st.markdown("### Confidence Analysis")
+                    
+                    # Create mock confidence scores
+                    component_scores = {
+                        "evidence_quality": 0.7,
+                        "reasoning_process": 0.75,
+                        "relevant_expertise": 0.65,
+                        "information_recency": 0.6,
+                        "bias_consideration": 0.7
+                    }
+                    
+                    # Display confidence breakdown
+                    display_confidence_breakdown(
+                        component_scores=component_scores,
+                        overall_confidence=0.68,
+                        strengths=["Strong reasoning process", "Good bias consideration"],
+                        weaknesses=["Limited relevant expertise"]
+                    )
+                
+                # Display research sources if available
+                if research:
+                    display_research_sources(
+                        research=research,
+                        allow_filtering=True
+                    )
+                
+                # Display reasoning steps
+                if reasoning_steps:
+                    display_reasoning_steps(
+                        steps=reasoning_steps,
+                        expand_all=False
+                    )
+                    
+                    # Display mock biases and uncertainties
+                    display_biases_and_uncertainties(
+                        biases=["Planning fallacy", "Anchoring bias", "Overconfidence bias"],
+                        uncertainties=["Data quality issues", "Model parameterization", "External unpredictable factors"]
+                    )
             
             # Display cost information
             if hasattr(forecast, 'metadata') and 'cost_info' in forecast.metadata:
                 cost_info = forecast.metadata['cost_info']
-                with st.container():
-                    st.info(
-                        f"📊 This forecast used {cost_info['tokens_used']} tokens and cost "
-                        f"{format_cost(cost_info['cost_usd'])}"
-                    )
+                display_info_box(
+                    message=f"This forecast used {cost_info['tokens_used']} tokens and cost {format_cost(cost_info['cost_usd'])}",
+                    type="info"
+                )
+            
+            # Add to forecast history for the research explorer
+            st.session_state.forecast_history.append({
+                "question": question,
+                "forecast": forecast,
+                "timestamp": datetime.now(),
+                "model": model_name,
+                "personality": personality_name
+            })
 
 with tab2:
+    st.title("Research Explorer")
+    
+    # Show forecast history if available
+    if not st.session_state.forecast_history:
+        st.markdown("No forecasts generated yet. Generate a forecast to explore research sources.")
+    else:
+        # Create a selection for previously generated forecasts
+        forecast_options = [
+            f"{idx+1}. {hist['question'].question_text[:50]}... ({hist['timestamp'].strftime('%Y-%m-%d %H:%M')})"
+            for idx, hist in enumerate(st.session_state.forecast_history)
+        ]
+        
+        selected_forecast_idx = st.selectbox(
+            "Select a forecast to explore:",
+            range(len(forecast_options)),
+            format_func=lambda i: forecast_options[i]
+        )
+        
+        # Get selected forecast
+        selected_forecast_data = st.session_state.forecast_history[selected_forecast_idx]
+        forecast = selected_forecast_data["forecast"]
+        question = selected_forecast_data["question"]
+        
+        # Display forecast details
+        st.subheader(f"Question: {question.question_text}")
+        
+        if isinstance(forecast, BinaryReport):
+            # Display binary forecast visualization
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                fig = create_binary_probability_chart(
+                    probability=forecast.prediction,
+                    community_prediction=question.community_prediction_at_access_time
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            with col2:
+                st.markdown(f"**Probability:** {forecast.prediction:.2%}")
+                if question.community_prediction_at_access_time:
+                    st.markdown(f"**Community Prediction:** {question.community_prediction_at_access_time:.2%}")
+                st.markdown(f"**Model:** {selected_forecast_data['model']}")
+                st.markdown(f"**Personality:** {selected_forecast_data['personality']}")
+                
+        elif hasattr(forecast, 'mean'):  # Numeric forecast
+            # Display numeric forecast visualization
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                fig = create_numeric_distribution_chart(
+                    mean=forecast.mean,
+                    low=forecast.low,
+                    high=forecast.high,
+                    unit=question.unit if hasattr(question, 'unit') else ""
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            with col2:
+                unit = question.unit if hasattr(question, 'unit') else ""
+                st.markdown(f"**Mean Estimate:** {forecast.mean} {unit}")
+                st.markdown(f"**Confidence Interval:** {forecast.low} - {forecast.high} {unit}")
+                st.markdown(f"**Model:** {selected_forecast_data['model']}")
+                st.markdown(f"**Personality:** {selected_forecast_data['personality']}")
+        
+        # Extract research from reasoning
+        research = ""
+        reasoning = forecast.reasoning
+        if "## Research" in reasoning:
+            parts = reasoning.split("## Research", 1)
+            if len(parts) > 1:
+                research_section = "## Research" + parts[1].split("##", 1)[0]
+                research = research_section
+        
+        # Display research sources and allow exploration
+        st.markdown("### Research Sources and Evidence")
+        if research:
+            display_research_sources(
+                research=research,
+                allow_filtering=True,
+                max_height=500
+            )
+        else:
+            st.markdown("No structured research data available for this forecast.")
+        
+        # Display reasoning structure
+        st.markdown("### Reasoning Structure")
+        
+        # Create mock reasoning steps from the forecast reasoning
+        reasoning_steps = []
+        if "##" in reasoning:
+            sections = reasoning.split("##")
+            for i, section in enumerate(sections[1:], 1):  # Skip the first empty part
+                section_title = section.split("\n", 1)[0].strip()
+                section_content = section.split("\n", 1)[1].strip() if "\n" in section else ""
+                reasoning_steps.append({
+                    "title": f"Step {i}",
+                    "type": section_title,
+                    "content": section_content
+                })
+        
+        if reasoning_steps:
+            display_reasoning_steps(
+                steps=reasoning_steps,
+                expand_all=False
+            )
+
+with tab3:
     st.title("Cost History")
     
     # Get cost history data
@@ -249,9 +542,9 @@ with tab2:
         if time_filter == "Today":
             df = df[df["Date"].dt.date == now.date()]
         elif time_filter == "Last 7 Days":
-            df = df[df["Date"] >= (now - timedelta(days=7))]
+            df = df[df["Date"] >= now - timedelta(days=7)]
         elif time_filter == "Last 30 Days":
-            df = df[df["Date"] >= (now - timedelta(days=30))]
+            df = df[df["Date"] >= now - timedelta(days=30)]
         elif time_filter == "This Month":
             df = df[df["Date"].dt.month == now.month]
             df = df[df["Date"].dt.year == now.year]
@@ -264,87 +557,65 @@ with tab2:
         elif sort_by == "Least Expensive":
             df = df.sort_values("Cost", ascending=True)
         
-        # Show summary statistics
-        st.subheader("Summary")
-        
-        # Display metrics in columns
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("Total Cost", format_cost(df["Cost"].sum()))
-        with col2:
-            st.metric("Average Cost", format_cost(df["Cost"].mean()))
-        with col3:
-            st.metric("Total Forecasts", f"{len(df):,}")
-        with col4:
-            st.metric("Total Tokens", f"{int(df['Tokens'].sum()):,}")
+        # Display grouped data if requested
+        if grouping != "None":
+            if grouping == "Day":
+                grouped = df.groupby(df["Date"].dt.date).agg({
+                    "Tokens": "sum",
+                    "Cost": "sum",
+                    "Question": "count"
+                }).reset_index()
+                grouped = grouped.rename(columns={"Question": "Count"})
+                grouped = grouped.sort_values("Date", ascending=False)
+            else:
+                grouped = df.groupby(grouping).agg({
+                    "Tokens": "sum",
+                    "Cost": "sum",
+                    "Question": "count"
+                }).reset_index()
+                grouped = grouped.rename(columns={"Question": "Count"})
+                grouped = grouped.sort_values("Cost", ascending=False)
             
-        # Create visualizations
-        st.subheader("Visualizations")
+            # Display the grouped data
+            st.subheader(f"Costs Grouped by {grouping}")
+            st.dataframe(grouped, use_container_width=True)
+            
+            # Create a visualization
+            if grouping == "Day":
+                chart_df = grouped.copy()
+                chart_df["Date"] = chart_df["Date"].astype(str)
+                fig = px.bar(
+                    chart_df, 
+                    x="Date", 
+                    y="Cost",
+                    title=f"Cost by {grouping}",
+                    labels={"Cost": "Cost (USD)", "Date": "Date"},
+                    text_auto=".2f"
+                )
+            else:
+                fig = px.bar(
+                    grouped, 
+                    x=grouping, 
+                    y="Cost",
+                    title=f"Cost by {grouping}",
+                    labels={"Cost": "Cost (USD)"},
+                    text_auto=".2f"
+                )
+            st.plotly_chart(fig, use_container_width=True)
         
-        # Cost over time chart
-        df_daily = df.copy()
-        df_daily["Day"] = df_daily["Date"].dt.date
-        daily_costs = df_daily.groupby("Day")["Cost"].sum().reset_index()
+        # Show the individual entries
+        st.subheader("Individual Costs")
         
-        if not daily_costs.empty:
-            fig1 = px.line(
-                daily_costs, 
-                x="Day", 
-                y="Cost", 
-                title="Daily Forecast Costs",
-                labels={"Cost": "Cost (USD)", "Day": "Date"}
-            )
-            st.plotly_chart(fig1, use_container_width=True)
+        # Format the cost as currency
+        df["Cost"] = df["Cost"].apply(lambda x: f"${x:.4f}")
         
-        # Cost breakdown by model/personality
-        if grouping == "Model" and not df.empty:
-            model_costs = df.groupby("Model")["Cost"].sum().reset_index()
-            fig2 = px.pie(
-                model_costs, 
-                values="Cost", 
-                names="Model", 
-                title="Cost by Model",
-                hole=0.4
-            )
-            st.plotly_chart(fig2, use_container_width=True)
-        elif grouping == "Personality" and not df.empty:
-            personality_costs = df.groupby("Personality")["Cost"].sum().reset_index()
-            fig2 = px.pie(
-                personality_costs, 
-                values="Cost", 
-                names="Personality", 
-                title="Cost by Personality",
-                hole=0.4
-            )
-            st.plotly_chart(fig2, use_container_width=True)
-        elif grouping == "Day" and not df.empty:
-            fig2 = px.bar(
-                daily_costs, 
-                x="Day", 
-                y="Cost",
-                title="Cost by Day"
-            )
-            st.plotly_chart(fig2, use_container_width=True)
+        # Format the date
+        df["Date"] = df["Date"].dt.strftime("%Y-%m-%d %H:%M:%S")
         
-        # Display full history as a table
-        st.subheader("Detailed History")
-        
-        # Format the date and cost columns
-        df["Formatted Date"] = df["Date"].dt.strftime("%Y-%m-%d %H:%M")
-        df["Formatted Cost"] = df["Cost"].apply(format_cost)
-        
-        # Display the table with formatted columns
-        st.dataframe(
-            df[["Formatted Date", "Question", "Tokens", "Formatted Cost", "Model", "Personality"]]
-            .rename(columns={
-                "Formatted Date": "Date",
-                "Formatted Cost": "Cost"
-            }),
-            hide_index=True,
-            use_container_width=True
-        )
+        # Display the data
+        st.dataframe(df, use_container_width=True)
     else:
-        st.info("No forecast history yet. Start making some forecasts!")
+        st.write("No cost history available yet.")
 
 # Add app info in sidebar
 with st.sidebar:

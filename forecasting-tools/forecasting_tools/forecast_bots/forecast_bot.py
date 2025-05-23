@@ -38,7 +38,9 @@ from forecasting_tools.data_models.questions import (
     NumericQuestion,
 )
 from forecasting_tools.forecast_helpers.metaculus_api import MetaculusApi
+from forecasting_tools.forecast_helpers.search_manager import SearchManager
 from forecasting_tools.personality_management import PersonalityManager
+from forecasting_tools.util.cache_manager import CacheManager
 
 T = TypeVar("T")
 
@@ -87,6 +89,10 @@ class ForecastBot(ABC):
         llms: dict[str, str | GeneralLlm] | None = None,
         logger_name: Optional[str] = None,
         personality_name: Optional[str] = None,
+        search_provider: str = "auto",
+        search_type: Literal["basic", "deep"] = "basic",
+        search_depth: Literal["low", "medium", "high"] = "medium",
+        enable_search_cache: bool = True,
     ) -> None:
         assert (
             research_reports_per_question > 0
@@ -107,6 +113,16 @@ class ForecastBot(ABC):
         self._note_pads: list[Notepad] = []
         self._note_pad_lock = asyncio.Lock()
         self._llms = llms or self._llm_config_defaults()
+        
+        # Initialize search settings
+        self.search_provider = search_provider
+        self.search_type = search_type
+        self.search_depth = search_depth
+        self.enable_search_cache = enable_search_cache
+        
+        # Initialize managers (singleton pattern ensures only one instance)
+        self.search_manager = SearchManager(default_provider=search_provider)
+        self.cache_manager = CacheManager[str]()
 
         for purpose, llm in self._llm_config_defaults().items():
             if purpose not in self._llms:
@@ -140,6 +156,88 @@ class ForecastBot(ABC):
             self.__class__._concurrency_limiter = asyncio.Semaphore(
                 self.__class__._max_concurrent_questions
             )
+    
+    async def research_question(
+        self, 
+        question: MetaculusQuestion, 
+        search_type: Optional[Literal["basic", "deep"]] = None,
+        search_depth: Optional[Literal["low", "medium", "high"]] = None,
+        search_provider: Optional[str] = None,
+        use_cache: Optional[bool] = None
+    ) -> str:
+        """
+        Perform research on a question using the SearchManager.
+        
+        This method provides a unified interface for all forecasting bots to perform
+        research using different search providers before generating forecasts.
+        
+        Args:
+            question: The question to research
+            search_type: The type of search (basic or deep)
+            search_depth: The depth of search (low, medium, high)
+            search_provider: The search provider to use
+            use_cache: Whether to use cached results
+            
+        Returns:
+            The research results as a string
+        """
+        # Use provided parameters or fall back to instance defaults
+        search_type = search_type or self.search_type
+        search_depth = search_depth or self.search_depth
+        search_provider = search_provider or self.search_provider
+        use_cache = self.enable_search_cache if use_cache is None else use_cache
+        
+        # Generate a cache key for this research query
+        cache_key = f"{question.question_id}:{search_type}:{search_depth}:{search_provider}"
+        
+        # Check cache first if enabled
+        if use_cache:
+            cached_result = await self.cache_manager.get(cache_key, "research")
+            if cached_result:
+                logger.info(f"Using cached research for question {question.question_id}")
+                return cached_result
+        
+        # Process the query using personality traits
+        query = question.question_text
+        if hasattr(self, "processor") and hasattr(self.processor, "process_research_query"):
+            processed_query = self.processor.process_research_query(question)
+            query = processed_query
+        
+        # Enhance the search query with additional context from the question
+        if question.background_info:
+            query = f"{query}\n\nBackground: {question.background_info}"
+            
+        if question.resolution_criteria:
+            query = f"{query}\n\nResolution criteria: {question.resolution_criteria}"
+        
+        # Perform the search
+        research_results = await self.search_manager.search(
+            query=query,
+            provider=search_provider,
+            search_type=search_type,
+            search_depth=search_depth,
+            use_cache=use_cache
+        )
+        
+        # Check if search failed
+        if research_results.startswith("ERROR:"):
+            logger.warning(f"Search failed: {research_results}")
+            # Fallback to an empty research result with explanation
+            research_results = (
+                "Unable to retrieve up-to-date information due to search provider issues. "
+                "The forecast will be based on existing knowledge only."
+            )
+        
+        # Cache the result if enabled
+        if use_cache:
+            await self.cache_manager.set(
+                cache_key, 
+                research_results, 
+                namespace="research",
+                ttl=86400  # 24 hours TTL
+            )
+        
+        return research_results
 
     @overload
     async def forecast_on_tournament(
@@ -267,8 +365,21 @@ class ForecastBot(ABC):
     @abstractmethod
     async def run_research(self, question: MetaculusQuestion) -> str:
         """
-        Researches a question and returns markdown report
+        Researches a question and returns markdown report.
+        
+        This abstract method should be implemented by subclasses to customize the research
+        process based on different personalities, research strategies, or domain-specific knowledge.
+        
+        The base implementation should use the search infrastructure for web research.
+        
+        Args:
+            question: The question to research
+            
+        Returns:
+            Markdown report with research results
         """
+        # This is an abstract method that should be implemented by subclasses
+        # A basic implementation would call self.research_question(question)
         raise NotImplementedError("Subclass should implement this method")
 
     async def summarize_research(

@@ -1,119 +1,156 @@
-# Forecasting Tools Demo
+# Forecasting Tools
 
-This project demonstrates how to use the [Metaculus forecasting-tools](https://github.com/Metaculus/forecasting-tools) package for creating forecasting bots that can help predict the outcomes of various questions.
+A comprehensive toolkit for generating, evaluating, and managing forecasts with a focus on accuracy, scalability, and reliability.
 
-## Setup
+## Overview
+
+Forecasting Tools provides a powerful platform for creating and managing probabilistic forecasts. The system is designed to help analysts, researchers, and decision-makers generate well-calibrated predictions supported by structured reasoning and evidence.
+
+Key features include:
+- Asynchronous processing of forecast requests
+- Persistent storage of forecasts and associated data
+- Rate limiting and batching for external API calls
+- Comprehensive logging and monitoring
+- Evaluation tools for forecast quality assessment
+- A/B testing capabilities to compare different forecasting approaches
+
+## Installation
 
 ### Prerequisites
+- Python 3.9+
+- SQLite or other database for persistent storage
 
-- Python 3.9 or higher
-- OpenAI API key
-- Exa API key (for web search capabilities)
+### Installation Steps
 
-### Installation
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/forecasting-tools.git
+cd forecasting-tools
 
-1. Clone this repository:
-   ```
-   git clone https://github.com/Lildvs/Forcasting-Tools-Meta
-   cd forecasting-tools-demo
-   ```
-
-2. Install dependencies using one of these methods:
-
-   **Using pip with requirements.txt:**
-   ```
-   pip install -r requirements.txt
-   ```
-
-   **Using setup.py:**
-   ```
-   pip install -e .
-   ```
-
-   **Installing directly:**
-   ```
-   pip install forecasting-tools python-dotenv
-   ```
-
-3. Create a `.env` file with your API keys:
-   ```
-   PYTHONPATH=.
-   
-   # The most important API keys (required for basic functionality)
-   OPENAI_API_KEY=your_openai_api_key_here
-   EXA_API_KEY=your_exa_api_key_here
-   
-   # Optional API keys
-   PERPLEXITY_API_KEY=
-   ASKNEWS_CLIENT_ID=
-   ASKNEWS_SECRET=
-   OPENROUTER_API_KEY=
-   ANTHROPIC_API_KEY=
-   HUGGINGFACE_API_KEY=
-   
-   # For Metaculus API integration
-   METACULUS_TOKEN=
-   
-   # Enable file writing (needed for logs and saving reports)
-   FILE_WRITING_ALLOWED=TRUE
-   ```
-
-   You can get these API keys from:
-   - OpenAI API Key: [OpenAI Platform](https://platform.openai.com/api-keys)
-   - Exa API Key: [Exa.ai](https://www.exa.ai/)
-   - Metaculus Token: [Metaculus](https://www.metaculus.com/)
-
-## Running the Examples
-
-### Basic Forecast Bot
-
-Run the basic forecast bot example:
-
-```
-python my_forecast_demo.py
+# Install the package and dependencies
+pip install -e ".[dev]"
 ```
 
-This script demonstrates how to:
-1. Create a simple binary question
-2. Use the TemplateBot to forecast the outcome
-3. Display the prediction and explanation
+## Quick Start
 
-### Custom Forecast Bot
+```python
+from forecasting_tools.api import ForecastingAPI
 
-Run the custom forecast bot example:
+# Initialize the API client
+api = ForecastingAPI()
+
+# Submit a binary forecast question
+job_id = api.submit_forecast(
+    question="Will SpaceX successfully land humans on Mars before 2030?",
+    forecast_type="binary",
+    search_queries=[
+        "SpaceX Mars mission timeline",
+        "Mars colonization plans",
+        "SpaceX Starship development"
+    ],
+    user_id="user123"
+)
+
+# Check the status of the forecast
+status = api.get_forecast_status(job_id)
+print(f"Forecast status: {status['status']}")
+
+# Once completed, retrieve the forecast
+if status["status"] == "completed":
+    forecast = api.get_forecast(job_id)
+    print(f"Question: {forecast['question']}")
+    print(f"Probability: {forecast['probability']}")
+    print(f"Reasoning: {forecast['reasoning']}")
+```
+
+## Architecture
+
+The system is built with a modular, component-based architecture:
+
+### Core Components
+
+- **Forecasting Pipeline**: Central component for processing forecast requests
+- **Storage Layer**: Unified interface for data persistence 
+- **Queue System**: Priority-based job queue for asynchronous processing
+- **Monitoring System**: Tracks system performance, API usage, and error rates
+
+### Supporting Components
+
+- **Async Helpers**: Utilities for asynchronous operations
+- **Configuration System**: Environment-specific settings
+- **Evaluation Framework**: Tools for assessing forecast quality
+
+For more details, see the [Architecture Documentation](docs/architecture/system_overview.md).
+
+## Development
+
+### Setting Up Development Environment
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov=forecasting_tools
+```
+
+### Project Structure
 
 ```
-python my_custom_bot.py
+forecasting-tools/
+├── forecasting_tools/       # Main package
+│   ├── api/                 # Public API interface
+│   ├── data/                # Storage and database models
+│   ├── evaluation/          # Forecast evaluation tools
+│   └── utils/               # Utility modules
+├── tests/                   # Test suite
+│   ├── unit/                # Unit tests
+│   ├── integration/         # Integration tests
+│   └── fixtures/            # Test data
+├── docs/                    # Documentation
+└── .github/                 # CI/CD configuration
 ```
 
-This script shows how to:
-1. Create a custom forecasting bot by inheriting from TemplateBot
-2. Override research and forecasting methods
-3. Forecast multiple questions with custom parameters
+## Testing
 
-## Important Notes
+The project includes comprehensive test suites:
 
-- **API Usage**: Running these examples will use your API keys and incur charges based on usage. Monitor your usage to avoid unexpected costs.
-- **Folders**: The scripts will create directories for saving forecast reports. These will be automatically created when running the examples.
-- **API Keys**: Never share your API keys. The `.env` file is added to `.gitignore` to prevent accidental commits.
+```bash
+# Run all tests
+pytest
 
-## Key Components
+# Run specific test categories
+pytest tests/unit/
+pytest tests/integration/
 
-### Question Types
-- **BinaryQuestion**: Questions with yes/no answers (probabilities)
-- **NumericQuestion**: Questions with numeric answers (distributions)
-- **MultipleChoiceQuestion**: Questions with multiple choice answers
+# Run with coverage report
+pytest --cov=forecasting_tools --cov-report=html
+```
 
-### Forecasting Bot Features
-- Research using AI and web searches
-- Multiple predictions per question
-- Aggregation of predictions
-- Saving detailed reports
-- Integration with Metaculus
+## Contributing
 
-## Resources
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- [Forecasting Tools GitHub Repository](https://github.com/Metaculus/forecasting-tools)
-- [Forecasting Tools Demo Website](https://forecasting-tools.streamlit.app/)
-- [Metaculus Website](https://www.metaculus.com/)
-- [Metaculus Discord](https://discord.gg/Dtq4JNdXnw) 
+## Documentation
+
+Full documentation is available in the `docs/` directory:
+
+- [System Architecture](docs/architecture/system_overview.md)
+- [API Reference](docs/api/api_reference.md)
+- [Usage Examples](docs/examples/basic_usage.md)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- This project builds on research in forecasting, decision science, and large language models
+- Inspired by [Forecasting Research Institute](https://forecastingresearch.org/) and [Good Judgment Project](https://goodjudgment.com/) 

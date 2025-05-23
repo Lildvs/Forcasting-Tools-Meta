@@ -108,17 +108,74 @@ class BasicBot(ForecastBot):
     
     async def run_research(self, question: MetaculusQuestion) -> str:
         """
-        Run research on a question using personality-aware prompting.
+        Run research on a question using the integrated research pipeline.
+        
+        This implementation:
+        1. Uses the search infrastructure for web research via research_question
+        2. Applies personality-specific processing to the query
+        3. Formats the results according to personality traits
         
         Args:
             question: The question to research
             
         Returns:
-            The research results as a string
+            Research results as a formatted string
         """
         # Process the research query based on personality
         processed_query = self.processor.process_research_query(question)
         
+        # Log research attempt
+        logger.info(f"Running research for question {question.question_id} with {self.personality_manager.personality_name} personality")
+        
+        # Select search depth based on personality traits
+        search_depth = "medium"  # Default
+        if hasattr(self.personality, "traits"):
+            traits = self.personality.traits
+            if "thoroughness" in traits:
+                thoroughness = traits["thoroughness"].value
+                if isinstance(thoroughness, (int, float)):
+                    if thoroughness > 0.7:
+                        search_depth = "high"
+                    elif thoroughness < 0.3:
+                        search_depth = "low"
+        
+        # Select search type based on personality and question complexity
+        search_type = "basic"
+        if question.resolution_criteria and len(question.resolution_criteria) > 100:
+            # More complex questions need deeper research
+            search_type = "deep"
+        
+        # Perform the research using integrated search
+        try:
+            research_results = await self.research_question(
+                question,
+                search_type=search_type,
+                search_depth=search_depth
+            )
+            
+            # If research failed or returned empty results, fall back to traditional method
+            if research_results.startswith("ERROR:") or not research_results.strip():
+                logger.warning(f"Web research failed for question {question.question_id}, falling back to non-web research")
+                research_results = await self._fallback_research(question)
+        except Exception as e:
+            logger.error(f"Research failed with error: {e}")
+            research_results = await self._fallback_research(question)
+        
+        # Format the research based on personality
+        formatted_research = self._format_research_results(question, research_results)
+        
+        return formatted_research
+    
+    async def _fallback_research(self, question: MetaculusQuestion) -> str:
+        """
+        Fallback research method when web research fails.
+        
+        Args:
+            question: The question to research
+            
+        Returns:
+            Research results as a string
+        """
         # Get the personality-specific system prompt
         research_prompt = self.personality_manager.get_prompt(
             "research_prompt",
@@ -128,16 +185,41 @@ class BasicBot(ForecastBot):
             current_date=datetime.now().strftime("%Y-%m-%d")
         )
         
+        # Process the query based on personality
+        processed_query = self.processor.process_research_query(question)
+        
         # Get thinking configuration based on personality
         thinking_config = self.personality_manager.get_thinking_config()
         
-        # Run the research
+        # Run the research using the LLM directly
         research_results = await self.get_llm("default", "llm").invoke(
             f"{research_prompt}\n\n{processed_query}",
             **thinking_config
         )
         
         return research_results
+    
+    def _format_research_results(self, question: MetaculusQuestion, research: str) -> str:
+        """
+        Format research results based on personality traits.
+        
+        Args:
+            question: The question that was researched
+            research: The raw research results
+            
+        Returns:
+            Formatted research results
+        """
+        # Add headers and structure
+        formatted_research = f"# Research on: {question.question_text}\n\n"
+        
+        # Add date and source information
+        formatted_research += f"*Research conducted on: {datetime.now().strftime('%Y-%m-%d')}*\n\n"
+        
+        # Add the actual research content
+        formatted_research += research
+        
+        return formatted_research
     
     async def _run_forecast_on_binary(
         self, question: BinaryQuestion, research: str

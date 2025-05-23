@@ -1,0 +1,330 @@
+{
+  "metadata": {
+    "description": "Historical forecasting predictions with known outcomes",
+    "version": "1.0.0",
+    "created_at": "2023-08-15T00:00:00Z",
+    "categories": ["technology", "politics", "economics", "science", "climate"]
+  },
+  "predictions": [
+    {
+      "id": "tech-1",
+      "question": "Will ChatGPT reach more than 100 million users by the end of 2023?",
+      "category": "technology",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.82,
+        "timestamp": "2023-01-15T00:00:00Z",
+        "reasoning": "Based on the explosive growth of ChatGPT in its first two months (reaching over 10 million users), and considering OpenAI's backing by Microsoft, the trajectory suggests it will easily surpass 100 million users by year end."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2023-12-31T00:00:00Z",
+        "evidence": "ChatGPT reached over 180 million users by November 2023 according to multiple analytics reports."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "tech-2",
+      "question": "Will Apple release a VR/AR headset in 2023?",
+      "category": "technology",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.75,
+        "timestamp": "2023-01-10T00:00:00Z",
+        "reasoning": "Apple has been working on AR/VR technology for years, with numerous patents and acquisitions in the space. Multiple reliable sources have reported that 2023 is the target launch year for their first headset."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2023-06-05T00:00:00Z",
+        "evidence": "Apple announced the Apple Vision Pro at WWDC 2023 on June 5, 2023."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "politics-1",
+      "question": "Will Russia and Ukraine reach a formal ceasefire agreement by the end of 2023?",
+      "category": "politics",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.15,
+        "timestamp": "2023-01-05T00:00:00Z",
+        "reasoning": "The conflict has shown no signs of de-escalation, with Russia continuing to escalate and Ukraine receiving increasing Western support. Historical data on conflicts of this scale suggests they typically last multiple years before formal agreements."
+      },
+      "outcome": {
+        "result": false,
+        "resolution_timestamp": "2023-12-31T00:00:00Z",
+        "evidence": "No ceasefire agreement was reached between Russia and Ukraine by the end of 2023, with the conflict continuing into 2024."
+      },
+      "metadata": {
+        "difficulty": "high",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "econ-1",
+      "question": "Will the US enter a recession in 2023 as defined by two consecutive quarters of negative GDP growth?",
+      "category": "economics",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.65,
+        "timestamp": "2023-01-02T00:00:00Z",
+        "reasoning": "The Federal Reserve's aggressive interest rate hikes to combat inflation, combined with persistent inflation and signs of slowing consumer spending suggest a recession is likely in 2023."
+      },
+      "outcome": {
+        "result": false,
+        "resolution_timestamp": "2023-12-31T00:00:00Z",
+        "evidence": "The US economy did not experience two consecutive quarters of negative GDP growth in 2023. In fact, GDP grew throughout the year despite high interest rates."
+      },
+      "metadata": {
+        "difficulty": "high",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "climate-1",
+      "question": "Will 2023 be the hottest year on record globally according to NASA?",
+      "category": "climate",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.58,
+        "timestamp": "2023-01-03T00:00:00Z",
+        "reasoning": "The combination of ongoing climate change trends and a predicted El Niño event later in the year gives a better than even chance that 2023 will break the previous record."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2024-01-15T00:00:00Z",
+        "evidence": "NASA and NOAA both confirmed that 2023 was the hottest year on record by a significant margin."
+      },
+      "metadata": {
+        "difficulty": "high",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "tech-3",
+      "question": "Will Elon Musk step down as CEO of Twitter/X by the end of 2023?",
+      "category": "technology",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.40,
+        "timestamp": "2023-01-20T00:00:00Z",
+        "reasoning": "While Musk has stated he would eventually find a replacement, his history suggests he maintains tight control of his companies. The timeline seems too short for him to find someone he trusts with his newest acquisition."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2023-12-18T00:00:00Z",
+        "evidence": "Elon Musk announced on December 18, 2023 that Linda Yaccarino would become the new CEO of Twitter/X, while he would transition to executive chairman and CTO roles."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "science-1",
+      "question": "Will a CRISPR-based treatment receive FDA approval in 2023?",
+      "category": "science",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.72,
+        "timestamp": "2023-01-08T00:00:00Z",
+        "reasoning": "Several CRISPR treatments are in late-stage trials with promising results, particularly for conditions like sickle cell disease. The FDA has signaled openness to gene editing therapies with appropriate safety data."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2023-12-08T00:00:00Z",
+        "evidence": "The FDA approved Casgevy (exagamglogene autotemcel), a CRISPR-based gene therapy for sickle cell disease, on December 8, 2023."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "tech-4",
+      "question": "Will SpaceX successfully complete an orbital test flight of Starship in 2023?",
+      "category": "technology",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.85,
+        "timestamp": "2023-01-25T00:00:00Z",
+        "reasoning": "SpaceX has made significant progress with Starship, and Elon Musk has stated they plan multiple orbital test flights in 2023. Their track record of eventually achieving their goals, despite delays, makes this likely."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2023-11-18T00:00:00Z",
+        "evidence": "SpaceX successfully completed the second integrated flight test of Starship on November 18, 2023, reaching orbital velocity before losing contact during reentry."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "politics-2",
+      "question": "Will Benjamin Netanyahu remain Prime Minister of Israel at the end of 2023?",
+      "category": "politics",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.65,
+        "timestamp": "2023-01-15T00:00:00Z",
+        "reasoning": "Netanyahu has just formed a new coalition government after winning the recent election. While his coalition is fragile and he faces legal challenges, his political skills and the structure of Israeli politics favor his survival in office."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2023-12-31T00:00:00Z",
+        "evidence": "Benjamin Netanyahu remained the Prime Minister of Israel throughout 2023 and into 2024, despite protests and the October 7 Hamas attack and subsequent Gaza war."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "econ-2",
+      "question": "Will US inflation (CPI) fall below 3% by December 2023?",
+      "category": "economics",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.55,
+        "timestamp": "2023-01-12T00:00:00Z",
+        "reasoning": "The Federal Reserve's aggressive rate hikes should continue to bring down inflation, which has already begun declining from its peak. However, persistent supply chain issues and wage growth could keep it above target longer than expected."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2024-01-11T00:00:00Z",
+        "evidence": "US CPI for December 2023 was reported at 3.4% year-over-year, but the November 2023 reading was 3.1%, below the 3% threshold."
+      },
+      "metadata": {
+        "difficulty": "high",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "numeric-1",
+      "question": "What will the peak price of Bitcoin be during 2023 (in USD)?",
+      "category": "economics",
+      "forecast_type": "numeric",
+      "prediction": {
+        "distribution": {
+          "median": 32000,
+          "p10": 22000,
+          "p90": 45000
+        },
+        "timestamp": "2023-01-05T00:00:00Z",
+        "reasoning": "After the significant downturn in 2022, Bitcoin is likely to recover somewhat as the market stabilizes, but may not reach previous all-time highs given regulatory uncertainty and higher interest rates."
+      },
+      "outcome": {
+        "value": 44467,
+        "resolution_timestamp": "2023-12-31T00:00:00Z",
+        "evidence": "Bitcoin's peak price in 2023 was $44,467 on December 8, 2023."
+      },
+      "metadata": {
+        "difficulty": "high",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "numeric-2",
+      "question": "What will the S&P 500 closing price be on December 31, 2023?",
+      "category": "economics",
+      "forecast_type": "numeric",
+      "prediction": {
+        "distribution": {
+          "median": 4200,
+          "p10": 3800,
+          "p90": 4600
+        },
+        "timestamp": "2023-01-15T00:00:00Z",
+        "reasoning": "Given expected economic conditions including moderating inflation, potential recession risks, and the Federal Reserve's policy trajectory, the S&P 500 is expected to see modest gains from current levels."
+      },
+      "outcome": {
+        "value": 4769.83,
+        "resolution_timestamp": "2023-12-29T00:00:00Z",
+        "evidence": "The S&P 500 closed at 4,769.83 on December 29, 2023, the last trading day of the year."
+      },
+      "metadata": {
+        "difficulty": "high",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "multi-1",
+      "question": "Which country will win the most gold medals at the 2023 World Aquatics Championships?",
+      "category": "sports",
+      "forecast_type": "multiple_choice",
+      "prediction": {
+        "options": [
+          {"option": "China", "probability": 0.35},
+          {"option": "United States", "probability": 0.30},
+          {"option": "Australia", "probability": 0.15},
+          {"option": "Great Britain", "probability": 0.10},
+          {"option": "Other", "probability": 0.10}
+        ],
+        "timestamp": "2023-01-20T00:00:00Z",
+        "reasoning": "China and the US typically dominate these championships, with Australia also fielding strong teams. China has shown particular strength in recent competitions, giving them a slight edge."
+      },
+      "outcome": {
+        "result": "China",
+        "resolution_timestamp": "2023-07-30T00:00:00Z",
+        "evidence": "China won 20 gold medals at the 2023 World Aquatics Championships in Fukuoka, Japan, ahead of Australia (13) and the United States (7)."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 7
+      }
+    },
+    {
+      "id": "multi-2",
+      "question": "Which country will have the highest GDP growth rate in 2023 among G20 nations?",
+      "category": "economics",
+      "forecast_type": "multiple_choice",
+      "prediction": {
+        "options": [
+          {"option": "India", "probability": 0.45},
+          {"option": "China", "probability": 0.25},
+          {"option": "Indonesia", "probability": 0.15},
+          {"option": "Saudi Arabia", "probability": 0.10},
+          {"option": "Other G20 nation", "probability": 0.05}
+        ],
+        "timestamp": "2023-01-10T00:00:00Z",
+        "reasoning": "India has shown strong post-pandemic recovery and is projected by multiple institutions including the IMF to have the highest growth rate among major economies. China's growth is hampered by its property crisis and COVID policy aftereffects."
+      },
+      "outcome": {
+        "result": "India",
+        "resolution_timestamp": "2024-01-30T00:00:00Z",
+        "evidence": "According to IMF and World Bank data, India's GDP growth for 2023 was approximately 6.3%, the highest among G20 nations."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 12
+      }
+    },
+    {
+      "id": "politics-3",
+      "question": "Will the debt ceiling be raised in the US without a government shutdown in 2023?",
+      "category": "politics",
+      "forecast_type": "binary",
+      "prediction": {
+        "probability": 0.70,
+        "timestamp": "2023-01-30T00:00:00Z",
+        "reasoning": "Despite divided government and partisan tensions, the severe economic consequences of a default typically lead to last-minute compromises. Historical precedent suggests brinkmanship followed by resolution."
+      },
+      "outcome": {
+        "result": true,
+        "resolution_timestamp": "2023-06-03T00:00:00Z",
+        "evidence": "President Biden signed a bill raising the debt ceiling on June 3, 2023, after bipartisan negotiations, avoiding a default without triggering a government shutdown."
+      },
+      "metadata": {
+        "difficulty": "medium",
+        "time_horizon_months": 6
+      }
+    }
+  ]
+} 

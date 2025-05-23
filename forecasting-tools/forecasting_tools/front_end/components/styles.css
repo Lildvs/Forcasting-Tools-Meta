@@ -1,0 +1,388 @@
+/* Forecasting Tools UI Styling */
+
+/* Base variables for theming */
+:root {
+  --primary-color: #0068c9;
+  --secondary-color: #83c9ff;
+  --text-color: #262730;
+  --background-color: #ffffff;
+  --success-color: #09ab3b;
+  --warning-color: #ff9800;
+  --error-color: #ff4b4b;
+  --gray-lightest: #f0f2f6;
+  --gray-light: #e6e9ef;
+  --gray-medium: #b7bac1;
+  --gray-dark: #58595b;
+  --border-radius: 0.5rem;
+  --card-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  --transition-speed: 0.2s;
+}
+
+/* General Card Styling */
+.forecast-card {
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--card-shadow);
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.forecast-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Confidence Level Styling */
+.confidence-level {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.confidence-very-high {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.confidence-high {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.confidence-medium {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.confidence-low {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.confidence-very-low {
+  background-color: #f1dede;
+  color: #5f2120;
+}
+
+/* Research Sources Styling */
+.research-source {
+  border-left: 3px solid var(--primary-color);
+  padding-left: 0.75rem;
+  margin-bottom: 0.75rem;
+  background-color: var(--gray-lightest);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.research-source .source-title {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+}
+
+.research-source .source-relevance {
+  font-size: 0.8rem;
+  color: var(--gray-dark);
+}
+
+/* Reasoning Steps Display */
+.reasoning-step {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.reasoning-step::before {
+  content: "";
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: -1.5rem;
+  width: 2px;
+  background-color: var(--gray-medium);
+}
+
+.reasoning-step:last-child::before {
+  bottom: 0;
+}
+
+.reasoning-step .step-number {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reasoning-step .step-title {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+/* Probability Distribution Visualization */
+.probability-distribution {
+  position: relative;
+  height: 100px;
+  margin: 1rem 0;
+  padding-top: 1rem;
+}
+
+.probability-bar {
+  position: absolute;
+  bottom: 0;
+  background-color: var(--primary-color);
+  opacity: 0.8;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+  transition: height var(--transition-speed);
+}
+
+.probability-bar:hover {
+  opacity: 1;
+}
+
+.probability-marker {
+  position: absolute;
+  width: 2px;
+  background-color: var(--error-color);
+  bottom: 0;
+  top: 0;
+}
+
+.probability-marker.prediction {
+  background-color: var(--success-color);
+  width: 3px;
+}
+
+/* Confidence Intervals */
+.confidence-interval {
+  position: relative;
+  height: 30px;
+  background-color: var(--gray-lightest);
+  border-radius: var(--border-radius);
+  margin: 1rem 0;
+}
+
+.confidence-interval-inner {
+  position: absolute;
+  height: 100%;
+  background-color: rgba(0, 104, 201, 0.3);
+  border-radius: var(--border-radius);
+}
+
+.confidence-interval-marker {
+  position: absolute;
+  width: 3px;
+  height: 140%;
+  top: -20%;
+  background-color: var(--primary-color);
+}
+
+.confidence-interval-label {
+  position: absolute;
+  font-size: 0.7rem;
+  color: var(--gray-dark);
+  transform: translateX(-50%);
+}
+
+/* Evidence Tags */
+.evidence-tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.evidence-tag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  background-color: var(--gray-light);
+  transition: background-color var(--transition-speed);
+}
+
+.evidence-tag:hover {
+  background-color: var(--gray-medium);
+  cursor: pointer;
+}
+
+.evidence-tag.selected {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+/* Modal Dialog for Progressive Disclosure */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: var(--background-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  max-width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .forecast-card {
+    padding: 0.75rem;
+  }
+  
+  .reasoning-step {
+    padding-left: 1.5rem;
+  }
+  
+  .probability-distribution {
+    height: 80px;
+  }
+  
+  .research-source {
+    padding: 0.4rem 0.6rem;
+  }
+}
+
+/* Accessibility Enhancements */
+.screen-reader-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Interactive Elements Focus States */
+button:focus,
+a:focus,
+.evidence-tag:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Total Cost Badge styling (moved from inline CSS) */
+.total-cost-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 1.5rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--gray-lightest);
+  border-radius: var(--border-radius);
+  font-weight: bold;
+  box-shadow: var(--card-shadow);
+  z-index: 1000;
+}
+
+.total-cost-badge .cost {
+  color: var(--error-color);
+  font-size: 1.2rem;
+}
+
+.total-cost-badge .label {
+  font-size: 0.8rem;
+  color: var(--text-color);
+}
+
+/* Research Explorer */
+.research-explorer {
+  border: 1px solid var(--gray-light);
+  border-radius: var(--border-radius);
+  margin-top: 1rem;
+}
+
+.research-explorer-header {
+  background-color: var(--gray-lightest);
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--gray-light);
+  font-weight: bold;
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+}
+
+.research-explorer-body {
+  padding: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Timeline for forecast updates */
+.forecast-timeline {
+  position: relative;
+  padding-left: 2rem;
+  margin: 2rem 0;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: -1.5rem;
+  top: 0.5rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+}
+
+.timeline-item::after {
+  content: "";
+  position: absolute;
+  left: -1rem;
+  top: 1.5rem;
+  bottom: 0;
+  width: 2px;
+  background-color: var(--gray-medium);
+}
+
+.timeline-item:last-child::after {
+  display: none;
+}
+
+.timeline-date {
+  font-size: 0.8rem;
+  color: var(--gray-dark);
+  margin-bottom: 0.25rem;
+}
+
+.timeline-content {
+  background-color: var(--gray-lightest);
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
+} 
