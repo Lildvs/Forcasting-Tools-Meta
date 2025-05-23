@@ -1,3 +1,7 @@
+"""
+Forecasting tools package for forecasting bots
+"""
+
 import nest_asyncio
 
 from forecasting_tools.agents_and_tools.base_rates.base_rate_researcher import (
@@ -46,7 +50,7 @@ from forecasting_tools.ai_models.deprecated_model_classes.perplexity import (
     Perplexity as Perplexity,
 )
 from forecasting_tools.ai_models.exa_searcher import ExaSearcher as ExaSearcher
-from forecasting_tools.ai_models.general_llm import GeneralLlm as GeneralLlm
+from forecasting_tools.ai_models.general_llm import GeneralLlm
 from forecasting_tools.ai_models.resource_managers.monetary_cost_manager import (
     MonetaryCostManager as MonetaryCostManager,
 )
@@ -95,6 +99,21 @@ from forecasting_tools.data_models.questions import (
 from forecasting_tools.data_models.questions import (
     QuestionState as QuestionState,
 )
+from forecasting_tools.forecast_bots.enhanced_template_bot import (
+    EnhancedTemplateBot as EnhancedTemplateBot,
+)
+from forecasting_tools.forecast_bots.enhanced_template_bot import (
+    EnhancedTemplateBotQ1 as EnhancedTemplateBotQ1,
+)
+from forecasting_tools.forecast_bots.enhanced_template_bot import (
+    EnhancedTemplateBotQ2 as EnhancedTemplateBotQ2,
+)
+from forecasting_tools.forecast_bots.enhanced_template_bot import (
+    EnhancedTemplateBotQ3 as EnhancedTemplateBotQ3,
+)
+from forecasting_tools.forecast_bots.enhanced_template_bot import (
+    EnhancedTemplateBotQ4 as EnhancedTemplateBotQ4,
+)
 from forecasting_tools.forecast_bots.forecast_bot import (
     ForecastBot as ForecastBot,
 )
@@ -126,6 +145,15 @@ from forecasting_tools.forecast_helpers.prediction_extractor import (
 )
 from forecasting_tools.forecast_helpers.smart_searcher import (
     SmartSearcher as SmartSearcher,
+)
+from forecasting_tools.personality_templates import (
+    PersonalityConfig as PersonalityConfig,
+)
+from forecasting_tools.personality_templates import (
+    PersonalityManager as PersonalityManager,
+)
+from forecasting_tools.personality_templates import (
+    TemplateManager as TemplateManager,
 )
 
 nest_asyncio.apply()

@@ -62,12 +62,12 @@ class Q1TemplateBot2025(ForecastBot):
 
     async def run_research(self, question: MetaculusQuestion) -> str:
         async with self._concurrency_limiter:
-            if os.getenv("OPENAI_API_KEY"):
-                research = await self._call_openai_direct(question.question_text)
-            elif os.getenv("EXA_API_KEY"):
-                research = await self._call_exa_smart_searcher(
-                    question.question_text
-                )
+            researcher = self.get_llm("researcher", "string_name")
+            
+            if researcher == "exa/exa-pro":
+                return await self._call_exa_pro(question.question_text)
+            if researcher == "openai/gpt-4.1":
+                return await self._call_openai_direct(question.question_text)
             elif os.getenv("PERPLEXITY_API_KEY"):
                 research = await self._call_perplexity(question.question_text)
             elif os.getenv("OPENROUTER_API_KEY"):
@@ -119,13 +119,13 @@ class Q1TemplateBot2025(ForecastBot):
             """
         )
         model = GeneralLlm(
-            model="openai/gpt-4o",
+            model="openai/gpt-4.1",
             temperature=0.1,
         )
         response = await model.invoke(prompt)
         return response
 
-    async def _call_exa_smart_searcher(self, question: str) -> str:
+    async def _call_exa_pro(self, question: str) -> str:
         """
         SmartSearcher is a custom class that is a wrapper around an search on Exa.ai
         """

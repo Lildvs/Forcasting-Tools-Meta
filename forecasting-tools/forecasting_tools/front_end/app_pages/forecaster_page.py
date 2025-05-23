@@ -17,6 +17,8 @@ from forecasting_tools.front_end.helpers.report_displayer import (
     ReportDisplayer,
 )
 from forecasting_tools.front_end.helpers.tool_page import ToolPage
+from forecasting_tools.front_end.helpers.personality_selector import PersonalitySelector
+from forecasting_tools.personality_management import PersonalityManager
 from forecasting_tools.util.jsonable import Jsonable
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 class ForecastInput(Jsonable, BaseModel):
     question: BinaryQuestion
+    personality_name: str = "balanced"
 
 
 class ForecasterPage(ToolPage):
@@ -42,6 +45,7 @@ class ForecasterPage(ToolPage):
     NUM_BASE_RATE_QUESTIONS_BOX = "num_base_rate_questions_box"
     METACULUS_URL_INPUT = "metaculus_url_input"
     FETCH_BUTTON = "fetch_button"
+    PERSONALITY_SELECTION = "personality_selection"
 
     @classmethod
     async def _display_intro_text(cls) -> None:
@@ -53,6 +57,39 @@ class ForecasterPage(ToolPage):
     @classmethod
     async def _get_input(cls) -> ForecastInput | None:
         cls.__display_metaculus_url_input()
+        
+        # Add personality selection before the form
+        st.subheader("Select Forecaster Personality")
+        
+        # Display domain selection for personality recommendation
+        domain_options = [
+            "General (No specific domain)",
+            "Economics", "Finance", "Politics", "Technology", 
+            "Science", "Health", "Sports", "Entertainment",
+            "Geopolitics", "Environment", "Energy", "Social"
+        ]
+        
+        selected_domain = st.selectbox(
+            "Question Domain (for personality recommendation):",
+            options=domain_options,
+            index=0
+        )
+        
+        # Get domain without the parentheses part
+        domain = selected_domain.split(" (")[0] if "(" in selected_domain else selected_domain
+        
+        # Get optimal personality for domain if a specific domain is selected
+        filter_by_domain = None
+        if domain != "General":
+            filter_by_domain = domain
+            st.info(f"Based on the selected domain, we recommend personalities optimized for {domain} forecasting.")
+        
+        # Add personality selector
+        selected_personality = PersonalitySelector.display_selector(
+            key_prefix=cls.PERSONALITY_SELECTION,
+            filter_by_domain=filter_by_domain
+        )
+        
         with st.form("forecast_form"):
             question_text = st.text_input(
                 "Yes/No Binary Question", key=cls.QUESTION_TEXT_BOX
@@ -74,6 +111,10 @@ class ForecasterPage(ToolPage):
                 if not question_text:
                     st.error("Question Text is required.")
                     return None
+                
+                # Ensure we have a personality selected (use default if none)
+                personality_name = selected_personality or "balanced"
+                
                 question = BinaryQuestion(
                     question_text=question_text,
                     background_info=background_info,
@@ -84,19 +125,57 @@ class ForecasterPage(ToolPage):
                 )
                 return ForecastInput(
                     question=question,
+                    personality_name=personality_name
                 )
         return None
 
     @classmethod
     async def _run_tool(cls, input: ForecastInput) -> BinaryReport:
-        with st.spinner("Forecasting... This may take a minute or two..."):
-            report = await MainBot(
+        with st.spinner(f"Forecasting with {input.personality_name} personality... This may take a minute or two..."):
+            # Create a bot with the selected personality
+            bot = MainBot(
                 research_reports_per_question=1,
                 predictions_per_research_report=5,
                 publish_reports_to_metaculus=False,
                 folder_to_save_reports_to=None,
-            ).forecast_question(input.question)
+                personality_name=input.personality_name
+            )
+            
+            # Display personality preview
+            with st.expander(f"Using {input.personality_name} personality", expanded=True):
+                # Get personality description
+                try:
+                    personality_manager = PersonalityManager()
+                    personality = personality_manager.load_personality(input.personality_name)
+                    
+                    # Display basic info about how this personality approaches forecasting
+                    st.markdown(f"### {personality.name}")
+                    if personality.description:
+                        st.markdown(f"*{personality.description}*")
+                    
+                    # Display personality traits summary
+                    st.markdown("#### Forecasting Approach")
+                    st.markdown(f"- **Thinking Style:** {personality.thinking_style.value}")
+                    st.markdown(f"- **Uncertainty Approach:** {personality.uncertainty_approach.value}")
+                    st.markdown(f"- **Reasoning Depth:** {personality.reasoning_depth.value}")
+                    
+                    # Create a simple progress bar to show the forecasting is active
+                    progress_bar = st.progress(0)
+                    for i in range(5):
+                        # Simulate activity while forecasting is happening
+                        progress_bar.progress((i + 1) * 20)
+                        
+                except Exception as e:
+                    st.warning(f"Could not load personality details: {str(e)}")
+            
+            # Generate forecast
+            report = await bot.forecast_question(input.question)
             assert isinstance(report, BinaryReport)
+            
+            # Add personality info to report
+            report.metadata = report.metadata or {}
+            report.metadata["personality_name"] = input.personality_name
+            
             return report
 
     @classmethod
@@ -114,6 +193,15 @@ class ForecasterPage(ToolPage):
 
     @classmethod
     async def _display_outputs(cls, outputs: list[BinaryReport]) -> None:
+        for output in outputs:
+            # Get personality name from metadata if available
+            personality_name = "balanced"
+            if hasattr(output, "metadata") and output.metadata:
+                personality_name = output.metadata.get("personality_name", "balanced")
+            
+            # Add personality name to the report display
+            st.markdown(f"### Forecast by {personality_name.capitalize()} Personality")
+        
         ReportDisplayer.display_report_list(outputs)
 
     @classmethod

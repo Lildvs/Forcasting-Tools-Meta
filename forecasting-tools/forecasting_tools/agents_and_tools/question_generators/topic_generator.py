@@ -44,14 +44,14 @@ class TopicGenerator:
     @classmethod
     async def generate_random_topic(
         cls,
-        model: GeneralLlm | SmartSearcher | str = "gpt-4o",
+        model: GeneralLlm | SmartSearcher | str = "gpt-4.1",
         number_of_topics: int = 10,
         additional_instructions: str = "",
     ) -> list[str]:
         from faker import Faker
 
         if isinstance(model, str):
-            model = GeneralLlm(model=model, temperature=1, timeout=40)
+            model = GeneralLlm(model=model, temperature=0.7, timeout=40)
 
         fake = Faker(cls.LANGUAGES)
 
@@ -132,7 +132,7 @@ class TopicGenerator:
     @classmethod
     async def generate_random_news_items(
         cls,
-        model: GeneralLlm | str = "gpt-4o",
+        model: GeneralLlm | str = "gpt-4.1",
         number_of_items: int = 10,
     ) -> list[str]:
         num_topics = 2
@@ -172,10 +172,10 @@ class TopicGenerator:
         cls,
         topic: str,
         number_of_items: int = 5,
-        model: GeneralLlm | str = "gpt-4o",
+        model: GeneralLlm | str = "gpt-4.1",
     ) -> list[str]:
         if isinstance(model, str):
-            model = GeneralLlm(model=model, temperature=1, timeout=40)
+            model = GeneralLlm(model=model, temperature=0.7, timeout=40)
 
         ask_news_results = await PerplexitySearcher().get_formatted_news_async(
             topic
@@ -217,7 +217,7 @@ class TopicGenerator:
     @classmethod
     async def get_news_on_random_company(
         cls,
-        model: GeneralLlm | str = "gpt-4o",
+        model: GeneralLlm | str = "gpt-4.1",
         search_model: GeneralLlm | str = "openrouter/perplexity/sonar-pro",
     ) -> tuple[OrgInfo, list[str]]:
         from faker import Faker

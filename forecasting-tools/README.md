@@ -895,3 +895,77 @@ Also it's helpful to use the log file that is automatically placed at `logs/late
 - Open an issue for bugs or feature requests
 
 Thank you for helping improve forecasting-tools!
+
+# Forecasting Tools
+
+A Python package for creating and running AI forecasting bots.
+
+## Features
+
+- Framework for creating forecasting bots
+- Support for different question types (binary, multiple choice, numeric)
+- Integration with Metaculus API
+- AI-powered research and forecasting
+- Personality Templates System for customizing AI forecasting behavior
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+## Personality Templates System
+
+The Personality Templates System allows you to customize the behavior and characteristics of forecasting bots through configurable personalities and templates.
+
+### Key Components
+
+1. **Research Templates**: Different templates for research tasks with specialized versions for different research methods.
+2. **Forecast Templates**: Templates for different question types (binary, multiple choice, numeric) and bot versions (Q1, Q2, Q3, Q4).
+3. **Personality Traits**: Configurable aspects of personality like reasoning depth, uncertainty approach, expert persona, and thinking style.
+4. **Personality Configurations**: Predefined combinations of traits for different forecasting personalities.
+
+### Available Personalities
+
+- **balanced**: A balanced personality that prioritizes objectivity and careful consideration of evidence
+- **cautious**: A cautious personality that prioritizes thorough analysis and avoids overconfidence
+- **creative**: A creative personality that thinks outside the box and considers unconventional scenarios
+- **economist**: An economist personality that specializes in economic analysis and market forecasting
+- **bayesian**: A Bayesian personality that excels at updating beliefs based on new evidence
+
+### Using Personalities
+
+You can specify a personality when creating a bot:
+
+```python
+from forecasting_tools import EnhancedTemplateBotQ2
+
+# Create a bot with a specific personality
+bot = EnhancedTemplateBotQ2(personality_name="cautious")
+
+# Run a forecast
+report = await bot.forecast_question(question)
+```
+
+### Personality Demo
+
+A demo script is included to showcase the personality templates system:
+
+```bash
+# List available personalities
+python personality_demo.py list
+
+# Forecast with a specific personality
+python personality_demo.py forecast 12345 cautious
+
+# Compare different personalities
+python personality_demo.py compare 12345 --personalities balanced cautious creative
+```
+
+## Documentation
+
+For more detailed information, see the inline documentation in the code.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

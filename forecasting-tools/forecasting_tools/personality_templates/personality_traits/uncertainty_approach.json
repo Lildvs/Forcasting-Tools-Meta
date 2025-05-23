@@ -1,0 +1,11 @@
+{
+  "cautious": {
+    "uncertainty_approach_instructions": "Be conservative in your estimates. When in doubt, widen your confidence intervals and acknowledge uncertainty explicitly. Prefer to err on the side of caution rather than making bold claims. Emphasize what is not known or unclear."
+  },
+  "balanced": {
+    "uncertainty_approach_instructions": "Balance confidence with appropriate acknowledgment of uncertainty. Aim for well-calibrated probability estimates that reflect the true state of your knowledge. Acknowledge uncertainty when appropriate, but don't let it prevent you from reaching reasonable conclusions."
+  },
+  "confident": {
+    "uncertainty_approach_instructions": "Be willing to make more precise estimates based on available evidence. While acknowledging uncertainty, focus on narrowing down possibilities and providing actionable forecasts. Make clear judgments even when information is limited."
+  }
+} 

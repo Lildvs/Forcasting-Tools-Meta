@@ -5,8 +5,8 @@ from forecasting_tools.ai_models.deprecated_model_classes.gpt4ovision import (
 )
 
 default_llms = {
-    "basic": "gpt-4o",
-    "advanced": "gpt-4o",
+    "basic": "gpt-4.1",
+    "advanced": "gpt-4.1",
 }
 
 

@@ -1,8 +1,16 @@
 import argparse
 import asyncio
+import json
 import logging
+import os
+import random
+import sys
+import time
 from datetime import datetime
+from pathlib import Path
 from typing import Literal
+
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from forecasting_tools.ai_models.ai_utils.ai_misc import clean_indents
 from forecasting_tools.ai_models.general_llm import GeneralLlm
@@ -24,6 +32,7 @@ from forecasting_tools.forecast_helpers.prediction_extractor import (
     PredictionExtractor,
 )
 from forecasting_tools.forecast_helpers.smart_searcher import SmartSearcher
+from forecasting_tools.personality_management import PersonalityManager
 
 logger = logging.getLogger(__name__)
 
@@ -123,40 +132,25 @@ class Q2TemplateBot2025(ForecastBot):
     async def _run_forecast_on_binary(
         self, question: BinaryQuestion, research: str
     ) -> ReasonedPrediction[float]:
-        prompt = clean_indents(
-            f"""
-            You are a professional forecaster interviewing for a job.
-
-            Your interview question is:
-            {question.question_text}
-
-            Question background:
-            {question.background_info}
-
-
-            This question's outcome will be determined by the specific criteria below. These criteria have not yet been satisfied:
-            {question.resolution_criteria}
-
-            {question.fine_print}
-
-
-            Your research assistant says:
-            {research}
-
-            Today is {datetime.now().strftime("%Y-%m-%d")}.
-
-            Before answering you write:
-            (a) The time left until the outcome to the question is known.
-            (b) The status quo outcome if nothing changed.
-            (c) A brief description of a scenario that results in a No outcome.
-            (d) A brief description of a scenario that results in a Yes outcome.
-
-            You write your rationale remembering that good forecasters put extra weight on the status quo outcome since the world changes slowly most of the time.
-
-            The last thing you write is your final answer as: "Probability: ZZ%", 0-100
-            """
+        # Get the binary forecast prompt from the personality manager
+        prompt = self.personality_manager.get_prompt(
+            "binary_forecast_prompt",
+            question_text=question.question_text,
+            background_info=question.background_info,
+            resolution_criteria=question.resolution_criteria,
+            fine_print=question.fine_print,
+            research=research,
+            current_date=datetime.now().strftime("%Y-%m-%d")
         )
-        reasoning = await self.get_llm("default", "llm").invoke(prompt)
+        
+        # Apply thinking configuration if available
+        thinking_config = self.personality_manager.get_thinking_config()
+        
+        reasoning = await self.get_llm("default", "llm").invoke(
+            prompt, 
+            **thinking_config if thinking_config else {}
+        )
+        
         logger.info(f"Reasoning for URL {question.page_url}: {reasoning}")
         prediction: float = PredictionExtractor.extract_last_percentage_value(
             reasoning, max_prediction=0.99, min_prediction=0.01
@@ -171,44 +165,26 @@ class Q2TemplateBot2025(ForecastBot):
     async def _run_forecast_on_multiple_choice(
         self, question: MultipleChoiceQuestion, research: str
     ) -> ReasonedPrediction[PredictedOptionList]:
-        prompt = clean_indents(
-            f"""
-            You are a professional forecaster interviewing for a job.
-
-            Your interview question is:
-            {question.question_text}
-
-            The options are: {question.options}
-
-
-            Background:
-            {question.background_info}
-
-            {question.resolution_criteria}
-
-            {question.fine_print}
-
-
-            Your research assistant says:
-            {research}
-
-            Today is {datetime.now().strftime("%Y-%m-%d")}.
-
-            Before answering you write:
-            (a) The time left until the outcome to the question is known.
-            (b) The status quo outcome if nothing changed.
-            (c) A description of an scenario that results in an unexpected outcome.
-
-            You write your rationale remembering that (1) good forecasters put extra weight on the status quo outcome since the world changes slowly most of the time, and (2) good forecasters leave some moderate probability on most options to account for unexpected outcomes.
-
-            The last thing you write is your final probabilities for the N options in this order {question.options} as:
-            Option_A: Probability_A
-            Option_B: Probability_B
-            ...
-            Option_N: Probability_N
-            """
+        # Get the multiple choice forecast prompt from the personality manager
+        prompt = self.personality_manager.get_prompt(
+            "multiple_choice_prompt",
+            question_text=question.question_text,
+            background_info=question.background_info,
+            resolution_criteria=question.resolution_criteria,
+            fine_print=question.fine_print,
+            research=research,
+            current_date=datetime.now().strftime("%Y-%m-%d"),
+            options=question.options
         )
-        reasoning = await self.get_llm("default", "llm").invoke(prompt)
+        
+        # Apply thinking configuration if available
+        thinking_config = self.personality_manager.get_thinking_config()
+        
+        reasoning = await self.get_llm("default", "llm").invoke(
+            prompt, 
+            **thinking_config if thinking_config else {}
+        )
+        
         logger.info(f"Reasoning for URL {question.page_url}: {reasoning}")
         prediction: PredictedOptionList = (
             PredictionExtractor.extract_option_list_with_percentage_afterwards(
@@ -228,57 +204,29 @@ class Q2TemplateBot2025(ForecastBot):
         upper_bound_message, lower_bound_message = (
             self._create_upper_and_lower_bound_messages(question)
         )
-        prompt = clean_indents(
-            f"""
-            You are a professional forecaster interviewing for a job.
-
-            Your interview question is:
-            {question.question_text}
-
-            Background:
-            {question.background_info}
-
-            {question.resolution_criteria}
-
-            {question.fine_print}
-
-            Units for answer: {question.unit_of_measure if question.unit_of_measure else "Not stated (please infer this)"}
-
-            Your research assistant says:
-            {research}
-
-            Today is {datetime.now().strftime("%Y-%m-%d")}.
-
-            {lower_bound_message}
-            {upper_bound_message}
-
-            Formatting Instructions:
-            - Please notice the units requested (e.g. whether you represent a number as 1,000,000 or 1 million).
-            - Never use scientific notation.
-            - Always start with a smaller number (more negative if negative) and then increase from there
-
-            Before answering you write:
-            (a) The time left until the outcome to the question is known.
-            (b) The outcome if nothing changed.
-            (c) The outcome if the current trend continued.
-            (d) The expectations of experts and markets.
-            (e) A brief description of an unexpected scenario that results in a low outcome.
-            (f) A brief description of an unexpected scenario that results in a high outcome.
-
-            You remind yourself that good forecasters are humble and set wide 90/10 confidence intervals to account for unknown unknowns.
-
-            The last thing you write is your final answer as:
-            "
-            Percentile 10: XX
-            Percentile 20: XX
-            Percentile 40: XX
-            Percentile 60: XX
-            Percentile 80: XX
-            Percentile 90: XX
-            "
-            """
+        
+        # Get the numeric forecast prompt from the personality manager
+        prompt = self.personality_manager.get_prompt(
+            "numeric_forecast_prompt",
+            question_text=question.question_text,
+            background_info=question.background_info,
+            resolution_criteria=question.resolution_criteria,
+            fine_print=question.fine_print,
+            research=research,
+            current_date=datetime.now().strftime("%Y-%m-%d"),
+            upper_bound_message=upper_bound_message,
+            lower_bound_message=lower_bound_message,
+            unit_of_measure=question.unit_of_measure if question.unit_of_measure else "Not stated (please infer this)"
         )
-        reasoning = await self.get_llm("default", "llm").invoke(prompt)
+        
+        # Apply thinking configuration if available
+        thinking_config = self.personality_manager.get_thinking_config()
+        
+        reasoning = await self.get_llm("default", "llm").invoke(
+            prompt, 
+            **thinking_config if thinking_config else {}
+        )
+        
         logger.info(f"Reasoning for URL {question.page_url}: {reasoning}")
         prediction: NumericDistribution = (
             PredictionExtractor.extract_numeric_distribution_from_list_of_percentile_number_and_probability(
@@ -350,12 +298,12 @@ if __name__ == "__main__":
         skip_previously_forecasted_questions=True,
         # llms={  # choose your model names or GeneralLlm llms here, otherwise defaults will be chosen for you
         #     "default": GeneralLlm(
-        #         model="metaculus/anthropic/claude-3-5-sonnet-20241022", # or "openrouter/openai/gpt-4o-mini", "openai/gpt-4o", etc (see docs for litellm)
+        #         model="metaculus/anthropic/claude-3-5-sonnet-20241022", # or "openrouter/openai/gpt-4.1-mini", "openai/gpt-4.1", etc (see docs for litellm)
         #         temperature=0.3,
         #         timeout=40,
         #         allowed_tries=2,
         #     ),
-        #     "summarizer": "openai/gpt-4o-mini",
+        #     "summarizer": "openai/gpt-4.1-mini",
         #     "researcher": "perplexity/deep-research/medium-depth",
         # },
     )

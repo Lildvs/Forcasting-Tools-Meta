@@ -31,7 +31,7 @@ class Q3TemplateBot2024(ForecastBot):
     """
 
     FINAL_DECISION_LLM = GeneralLlm(
-        model="gpt-4o", temperature=0.1
+        model="gpt-4.1", temperature=0.1
     )  # Q3 Bot used the default llama index temperature which as of Dec 21 2024 is 0.1
 
     @classmethod
@@ -41,14 +41,8 @@ class Q3TemplateBot2024(ForecastBot):
         }
 
     async def run_research(self, question: MetaculusQuestion) -> str:
-        system_prompt = clean_indents(
-            """
-            You are an assistant to a superforecaster.
-            The superforecaster will give you a question they intend to forecast on.
-            To be a great assistant, you generate a concise but detailed rundown of the most relevant news, including if the question would resolve Yes or No based on current information.
-            You do not produce forecasts yourself.
-            """
-        )
+        # Get the research prompt from the personality manager
+        system_prompt = self.personality_manager.get_prompt("research_prompt")
 
         # Note: The original q3 bot did not set temperature, and I could not find the default temperature of perplexity
         response = await Perplexity(
@@ -59,36 +53,25 @@ class Q3TemplateBot2024(ForecastBot):
     async def _run_forecast_on_binary(
         self, question: BinaryQuestion, research: str
     ) -> ReasonedPrediction[float]:
-        prompt = clean_indents(
-            f"""
-            You are a professional forecaster interviewing for a job.
-
-            Your interview question is:
-            {question.question_text}
-
-            background:
-            {question.background_info}
-
-            {question.resolution_criteria}
-
-            {question.fine_print}
-
-
-            Your research assistant says:
-            {research}
-
-            Today is {datetime.now().strftime("%Y-%m-%d")}.
-
-            Before answering you write:
-            (a) The time left until the outcome to the question is known.
-            (b) What the outcome would be if nothing changed.
-            (c) What you would forecast if there was only a quarter of the time left.
-            (d) What you would forecast if there was 4x the time left.
-
-            You write your rationale and then the last thing you write is your final answer as: "Probability: ZZ%", 0-100
-            """
+        # Get the binary forecast prompt from the personality manager
+        prompt = self.personality_manager.get_prompt(
+            "binary_forecast_prompt",
+            question_text=question.question_text,
+            background_info=question.background_info,
+            resolution_criteria=question.resolution_criteria,
+            fine_print=question.fine_print,
+            research=research,
+            current_date=datetime.now().strftime("%Y-%m-%d")
         )
-        reasoning = await self.get_llm("default", "llm").invoke(prompt)
+        
+        # Apply thinking configuration if available
+        thinking_config = self.personality_manager.get_thinking_config()
+        
+        reasoning = await self.get_llm("default", "llm").invoke(
+            prompt, 
+            **thinking_config if thinking_config else {}
+        )
+        
         prediction = PredictionExtractor.extract_last_percentage_value(
             reasoning, max_prediction=0.99, min_prediction=0.01
         )

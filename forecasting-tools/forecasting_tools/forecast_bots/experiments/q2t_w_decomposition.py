@@ -334,7 +334,7 @@ class Q2TemplateBotWithDecompositionV2(Q2TemplateBot2025):
             {sub_answers}
             """
 
-            return combined_research
+        return combined_research
 
     async def _get_sub_questions_as_bullets(
         self, question: MetaculusQuestion, research: str

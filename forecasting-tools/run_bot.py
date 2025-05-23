@@ -71,23 +71,79 @@ async def get_all_bots() -> list[ForecastBot]:
 
 
 def create_bot(
-    llm: GeneralLlm,
+    main_llm: GeneralLlm | str = "gpt-4.1",
+    bot_name: str | None = None,
+    research_reports_per_question: int = 1,
     researcher: str | GeneralLlm = "perplexity/news-summaries",
     predictions_per_research_report: int = 5,
+    personality_name: str | None = None,
+    bot_type: str = "template",  # template, basic, research, calibrated, economist, bayesian
+    calibration_strength: float = 0.5,
+    economic_focus: str | None = None,
+    sensitivity_analysis: bool = True,
+    prior_source: str = "reference_class",
 ) -> ForecastBot:
-    default_bot = Q2TemplateBot2025(
-        research_reports_per_question=1,
-        predictions_per_research_report=predictions_per_research_report,
-        use_research_summary_to_forecast=default_for_using_summary,
-        publish_reports_to_metaculus=default_for_publish_to_metaculus,
-        skip_previously_forecasted_questions=default_for_skipping_questions,
-        llms={
-            "default": llm,
-            "summarizer": "gpt-4o-mini",
-            "researcher": researcher,
-        },
-    )
-    return default_bot
+    # Import new bot types
+    from forecasting_tools.forecast_bots.basic_bot import BasicBot
+    from forecasting_tools.forecast_bots.research_bot import ResearchBot
+    from forecasting_tools.forecast_bots.calibrated_bot import CalibratedBot
+    from forecasting_tools.forecast_bots.economist_bot import EconomistBot
+    from forecasting_tools.forecast_bots.bayesian_bot import BayesianBot
+
+    # Create base LLM configuration
+    llms = {
+        "default": main_llm,
+        "researcher": researcher,
+    }
+    
+    # Common parameters for all bot types
+    common_params = {
+        "bot_name": bot_name,
+        "publish_reports_to_metaculus": False,
+        "research_reports_per_question": research_reports_per_question,
+        "predictions_per_research_report": predictions_per_research_report,
+        "personality_name": personality_name,
+    }
+    
+    # Select the appropriate bot type
+    if bot_type == "basic":
+        bot = BasicBot(
+            **common_params,
+            llms=llms,
+        )
+    elif bot_type == "research":
+        bot = ResearchBot(
+            **common_params,
+            llms=llms,
+            research_depth="deep",
+        )
+    elif bot_type == "calibrated":
+        bot = CalibratedBot(
+            **common_params,
+            llms=llms,
+            calibration_strength=calibration_strength,
+        )
+    elif bot_type == "economist":
+        bot = EconomistBot(
+            **common_params,
+            llms=llms,
+            economic_focus=economic_focus,
+        )
+    elif bot_type == "bayesian":
+        bot = BayesianBot(
+            **common_params,
+            llms=llms,
+            calibration_strength=calibration_strength,
+            sensitivity_analysis=sensitivity_analysis,
+            prior_source=prior_source,
+        )
+    else:  # Default to template bot
+        bot = Q2TemplateBot2025(
+            **common_params,
+            llms=llms,
+        )
+    
+    return bot
 
 
 def get_default_bot_dict() -> dict[str, Any]:  # NOSONAR
@@ -221,7 +277,7 @@ def get_default_bot_dict() -> dict[str, Any]:  # NOSONAR
             "bot": create_bot(
                 default_deepseek_research_bot_llm,
                 researcher=GeneralLlm(
-                    model="openai/gpt-4o-search-preview", temperature=None
+                    model="openai/gpt-4.1-search", temperature=None
                 ),
             ),
         },
@@ -380,7 +436,7 @@ def get_default_bot_dict() -> dict[str, Any]:  # NOSONAR
             "estimated_cost_per_question": roughly_gpt_4o_cost,
             "bot": create_bot(
                 GeneralLlm(
-                    model="gpt-4o",
+                    model="gpt-4.1",
                     temperature=default_temperature,
                 ),
             ),
@@ -389,7 +445,7 @@ def get_default_bot_dict() -> dict[str, Any]:  # NOSONAR
             "estimated_cost_per_question": roughly_gpt_4o_mini_cost,
             "bot": create_bot(
                 GeneralLlm(
-                    model="gpt-4o-mini",
+                    model="gpt-4.1-mini",
                     temperature=default_temperature,
                 ),
             ),
@@ -585,6 +641,25 @@ if __name__ == "__main__":
         type=str,
         help="The researcher to use",
         default="perplexity/deep-research/high-depth",
+    )
+
+    parser.add_argument(
+        "--llm",
+        type=str,
+        default="default",
+        help="Name of the LLM to use (either 'default', 'gpt-4', 'gpt-3.5-turbo', etc.)",
+    )
+    parser.add_argument(
+        "--metadata",
+        type=str,
+        default=None,
+        help="Path to a JSON file with metadata for the forecast",
+    )
+    parser.add_argument(
+        "--personality",
+        type=str,
+        default=None,
+        help="Name of the personality profile to use (e.g., 'balanced', 'cautious', 'creative')",
     )
 
     args = parser.parse_args()

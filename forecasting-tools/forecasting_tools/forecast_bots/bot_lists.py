@@ -1,5 +1,12 @@
 from forecasting_tools.data_models.data_organizer import DataOrganizer
 from forecasting_tools.data_models.questions import MetaculusQuestion
+from forecasting_tools.forecast_bots.enhanced_template_bot import (
+    EnhancedTemplateBot,
+    EnhancedTemplateBotQ1,
+    EnhancedTemplateBotQ2,
+    EnhancedTemplateBotQ3,
+    EnhancedTemplateBotQ4,
+)
 from forecasting_tools.forecast_bots.experiments.q2t_w_decomposition import (
     Q2TemplateBotWithDecompositionV1,
     Q2TemplateBotWithDecompositionV2,
@@ -30,6 +37,11 @@ def get_all_important_bot_classes() -> list[type[ForecastBot]]:
     return [
         MainBot,
         TemplateBot,
+        EnhancedTemplateBot,
+        EnhancedTemplateBotQ1,
+        EnhancedTemplateBotQ2,
+        EnhancedTemplateBotQ3,
+        EnhancedTemplateBotQ4,
         Q2TemplateBot2025,
         Q1TemplateBot2025,
         Q4TemplateBot2024,
@@ -43,7 +55,11 @@ def get_all_important_bot_classes() -> list[type[ForecastBot]]:
 
 
 def get_all_bots_for_doing_cheap_tests() -> list[ForecastBot]:
-    return [TemplateBot(), UniformProbabilityBot()]
+    return [
+        TemplateBot(), 
+        EnhancedTemplateBot(personality_name="balanced"), 
+        UniformProbabilityBot()
+    ]
 
 
 def get_all_bot_question_type_pairs_for_cheap_tests() -> (

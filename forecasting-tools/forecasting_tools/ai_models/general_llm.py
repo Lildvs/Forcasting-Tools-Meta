@@ -68,6 +68,15 @@ class GeneralLlm(
         "gpt-4o-mini": {
             "timeout": 40,
         },
+        "gpt-4.1": {
+            "timeout": 60,
+        },
+        "gpt-4.1-mini": {
+            "timeout": 40,
+        },
+        "gpt-4.1-nano": {
+            "timeout": 40,
+        },
         "o1": {
             "timeout": 80,
         },

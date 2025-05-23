@@ -1,0 +1,10 @@
+# Core dependencies from requirements.txt
+-r requirements.txt
+
+# Development dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+nest-asyncio>=1.5.6
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0 

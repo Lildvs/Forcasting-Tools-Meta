@@ -23,6 +23,12 @@ from forecasting_tools.front_end.app_pages.key_factors_page import (
 from forecasting_tools.front_end.app_pages.niche_list_researcher_page import (
     NicheListResearchPage,
 )
+from forecasting_tools.front_end.app_pages.personality_manager_page import (
+    PersonalityManagerPage,
+)
+from forecasting_tools.front_end.app_pages.personality_analytics_page import (
+    PersonalityAnalyticsPage,
+)
 from forecasting_tools.front_end.helpers.app_page import AppPage
 from forecasting_tools.util.custom_logger import CustomLogger
 
@@ -39,6 +45,9 @@ class HomePage(AppPage):
     ESTIMATOR_PAGE: type[AppPage] = EstimatorPage
     KEY_FACTORS_PAGE: type[AppPage] = KeyFactorsPage
     BENCHMARK_PAGE: type[AppPage] = BenchmarkPage
+    PERSONALITY_MANAGER_PAGE: type[AppPage] = PersonalityManagerPage
+    PERSONALITY_ANALYTICS_PAGE: type[AppPage] = PersonalityAnalyticsPage
+    
     NON_HOME_PAGES: list[type[AppPage]] = [
         CHAT_PAGE,
         FORECASTER_PAGE,
@@ -46,11 +55,59 @@ class HomePage(AppPage):
         BASE_RATE_PAGE,
         NICHE_LIST_RESEARCH_PAGE,
         ESTIMATOR_PAGE,
+        PERSONALITY_MANAGER_PAGE,
+        PERSONALITY_ANALYTICS_PAGE,
     ]
 
     @classmethod
     async def _async_main(cls) -> None:
-        st.title("What do you want to do?")
+        st.title("Forecasting Tools")
+
+        st.markdown(
+            """
+            Welcome to the Forecasting Tools suite! This application provides a range of forecasting capabilities using AI.
+            
+            ## Available Tools
+            
+            ### Core Forecasting
+            - **🔍 Forecast a Question**: Generate forecasts for binary questions
+            - **📊 Key Factors Analysis**: Identify and analyze key factors that influence a forecast
+            - **📈 Base Rate Finder**: Find relevant base rates for your forecasts
+            - **🧮 Estimator**: Generate estimates for numerical questions
+            
+            ### Personality Management
+            - **👤 Personality Manager**: Create, edit, and manage forecaster personalities
+            - **📊 Personality Analytics**: Analyze personality performance across domains
+            
+            ### Research Tools
+            - **🔎 Niche List Researcher**: Generate comprehensive lists for research questions
+            - **📚 Benchmark Questions**: Explore benchmark questions for testing
+            
+            ## Getting Started
+            
+            Select a tool from the sidebar to begin. Each tool provides specific forecasting capabilities.
+            
+            For questions or feedback, please contact the development team.
+            """
+        )
+
+        # Add sidebar with links to different tools
+        st.sidebar.title("Navigation")
+
+        st.sidebar.header("Core Forecasting")
+        st.sidebar.page_link("forecasting_tools/front_end/app_pages/forecaster_page.py", label="🔍 Forecast a Question")
+        st.sidebar.page_link("forecasting_tools/front_end/app_pages/key_factors_page.py", label="📊 Key Factors Analysis")
+        st.sidebar.page_link("forecasting_tools/front_end/app_pages/base_rate_page.py", label="📈 Base Rate Finder")
+        st.sidebar.page_link("forecasting_tools/front_end/app_pages/estimator_page.py", label="🧮 Estimator")
+
+        st.sidebar.header("Personality Management")
+        st.sidebar.page_link("forecasting_tools/front_end/app_pages/personality_manager_page.py", label="👤 Personality Manager")
+        st.sidebar.page_link("forecasting_tools/front_end/app_pages/personality_analytics_page.py", label="📊 Personality Analytics")
+
+        st.sidebar.header("Research Tools")
+        st.sidebar.page_link("forecasting_tools/front_end/app_pages/niche_list_researcher_page.py", label="🔎 Niche List Researcher")
+        st.sidebar.page_link("forecasting_tools/front_end/app_pages/benchmark_page.py", label="📚 Benchmark Questions")
+
         for page in cls.NON_HOME_PAGES:
             label = page.PAGE_DISPLAY_NAME
             if st.button(label, key=label):
@@ -65,7 +122,7 @@ def run_forecasting_streamlit_app() -> None:
         [page.convert_to_streamlit_page() for page in all_pages]
     )
     st.set_page_config(
-        page_title="Forecasting-Tools", page_icon=":material/explore:"
+        page_title="Forecasting-Tools", page_icon="🔮", layout="wide", initial_sidebar_state="expanded"
     )
     navigation.run()
 

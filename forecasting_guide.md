@@ -71,7 +71,8 @@ Our participation in the Metaculus quarterly competition represents a concrete b
 This section is reserved for future requirements and adjustments as the project evolves.
 
 Potential areas for future enhancement:
-- Integration with additional data sources
+- Do not create a app.py file for the GUI, we are using front_end/Home.py as the path for our GUI
+- We are using Streamlit cloud for our deployment of this project. Do not attempt to create a local instance of this project, unless for testing purposes
 - Implementation of more sophisticated aggregation methods
 - Development of domain-specific reasoning modules
 - Incorporation of automated evaluation metrics

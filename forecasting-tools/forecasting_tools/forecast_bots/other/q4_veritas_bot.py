@@ -19,7 +19,7 @@ from forecasting_tools.forecast_helpers.prediction_extractor import (
 
 
 class Q4VeritasBot(Q3TemplateBot2024):
-    FINAL_DECISION_LLM = GeneralLlm(model="gpt-4o", temperature=0.7)
+    FINAL_DECISION_LLM = GeneralLlm(model="gpt-4.1", temperature=0.7)
 
     def __init__(
         self,

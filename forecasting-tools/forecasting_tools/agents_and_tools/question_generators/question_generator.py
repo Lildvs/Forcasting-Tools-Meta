@@ -37,7 +37,7 @@ class QuestionGenerator:
 
     def __init__(
         self,
-        model: GeneralLlm | str = "gpt-4o",
+        model: GeneralLlm | str = "gpt-4.1",
         forecaster: ForecastBot | None = None,
         researcher: SmartSearcher | None = None,
         max_iterations: int = 3,

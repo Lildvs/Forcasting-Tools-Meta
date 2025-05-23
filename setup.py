@@ -10,6 +10,7 @@ setup(
     install_requires=[
         "forecasting-tools",
         "python-dotenv",
+        "pyyaml",
     ],
     python_requires=">=3.9",
 ) 

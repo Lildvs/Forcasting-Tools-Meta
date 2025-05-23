@@ -1,0 +1,13 @@
+# Core dependencies
+forecasting-tools[personality]
+streamlit>=1.20.0
+pandas>=1.4.0
+plotly>=5.10.0
+uuid>=1.30
+
+# Additional dependencies for visualization and data handling
+numpy>=1.22.0
+matplotlib>=3.5.0
+
+# Database dependencies
+sqlitedict>=2.0.0 

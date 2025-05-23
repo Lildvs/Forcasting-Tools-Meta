@@ -7,7 +7,7 @@ import time
 import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Coroutine, Literal, Sequence, TypeVar, cast, overload
+from typing import Any, Coroutine, Literal, Sequence, TypeVar, cast, overload, Optional, Dict, ClassVar, Set
 
 from exceptiongroup import ExceptionGroup
 from pydantic import BaseModel
@@ -38,6 +38,7 @@ from forecasting_tools.data_models.questions import (
     NumericQuestion,
 )
 from forecasting_tools.forecast_helpers.metaculus_api import MetaculusApi
+from forecasting_tools.personality_management import PersonalityManager
 
 T = TypeVar("T")
 
@@ -68,6 +69,12 @@ class ForecastBot(ABC):
     Base class for all forecasting bots.
     """
 
+    _max_concurrent_questions: ClassVar[int] = 3
+    _concurrency_limiter: ClassVar[asyncio.Semaphore]
+    # What percentage of questions do we want to retry if something goes wrong
+    _research_retry_percentage: float = 0.5
+    _forecast_retry_percentage: float = 0.5
+
     def __init__(
         self,
         *,
@@ -78,6 +85,8 @@ class ForecastBot(ABC):
         folder_to_save_reports_to: str | None = None,
         skip_previously_forecasted_questions: bool = False,
         llms: dict[str, str | GeneralLlm] | None = None,
+        logger_name: Optional[str] = None,
+        personality_name: Optional[str] = None,
     ) -> None:
         assert (
             research_reports_per_question > 0
@@ -116,6 +125,21 @@ class ForecastBot(ABC):
         logger.debug(
             f"LLMs at initialization for bot are: {self.make_llm_dict()}"
         )
+
+        # Initialize the logger
+        self._logger = logging.getLogger(
+            logger_name if logger_name is not None else self.__class__.__name__
+        )
+
+        # Initialize the personality manager
+        self.personality_manager = PersonalityManager(personality_name)
+        self._logger.info(f"Using personality: {self.personality_manager.personality_name}")
+
+        # Initialize the concurrency limiter if it doesn't exist yet
+        if not hasattr(self.__class__, "_concurrency_limiter"):
+            self.__class__._concurrency_limiter = asyncio.Semaphore(
+                self.__class__._max_concurrent_questions
+            )
 
     @overload
     async def forecast_on_tournament(
@@ -841,31 +865,28 @@ class ForecastBot(ABC):
     @classmethod
     def _llm_config_defaults(cls) -> dict[str, str | GeneralLlm]:
         """
-        Returns a dictionary of default llms for the bot.
-        The keys are the purpose of the llm and the values are the llms (model name or GeneralLlm object).
-        Consider adding:
-        - reasoner
-        - fermi-estimator
-        - judge
-        - etc.
+        Return the default LLM configuration. This can be overridden by subclasses.
+        Default is to use GPT-4.1 for all keys.
+        
+        Returns:
+            A dictionary mapping LLM names to LLM models or strings
         """
-
         if os.getenv("OPENAI_API_KEY"):
-            main_default_llm = GeneralLlm(model="gpt-4o", temperature=0.3)
+            main_default_llm = GeneralLlm(model="gpt-4.1", temperature=0.3)
         elif os.getenv("ANTHROPIC_API_KEY"):
             main_default_llm = GeneralLlm(
                 model="claude-3-7-sonnet-latest", temperature=0.3
             )
         elif os.getenv("OPENROUTER_API_KEY"):
             main_default_llm = GeneralLlm(
-                model="openrouter/openai/gpt-4o", temperature=0.3
+                model="openrouter/openai/gpt-4.1", temperature=0.3
             )
         elif os.getenv("METACULUS_TOKEN"):
             main_default_llm = GeneralLlm(
-                model="metaculus/gpt-4o", temperature=0.3
+                model="metaculus/gpt-4.1", temperature=0.3
             )
         else:
-            main_default_llm = GeneralLlm(model="gpt-4o", temperature=0.3)
+            main_default_llm = GeneralLlm(model="gpt-4.1", temperature=0.3)
 
         if os.getenv("OPENAI_API_KEY"):
             summarizer = GeneralLlm(model="gpt-4o-mini", temperature=0.3)
@@ -903,3 +924,44 @@ class ForecastBot(ABC):
             "summarizer": summarizer,
             "researcher": researcher,
         }
+
+    @classmethod
+    def _get_default_llm_for_quarter(cls, quarter: int) -> GeneralLlm:
+        """
+        If we're going to configure this in different places, we want to be sure
+        it's consistent.
+        """
+        if quarter == 1:
+            main_default_llm = GeneralLlm(model="gpt-4.1", temperature=0.3)
+        elif quarter == 2:
+            # The "real" q2 bot used openrouter/openai/gpt-4o
+            main_default_llm = GeneralLlm(
+                model="openrouter/openai/gpt-4.1", temperature=0.3
+            )
+        elif quarter == 3:
+            # The "real" q3 bot used metaculus/gpt-4o
+            main_default_llm = GeneralLlm(
+                model="metaculus/gpt-4.1", temperature=0.3
+            )
+        else:
+            main_default_llm = GeneralLlm(model="gpt-4.1", temperature=0.3)
+
+        return main_default_llm
+
+    @classmethod
+    def _get_default_summarizer_for_quarter(cls, quarter: int) -> GeneralLlm:
+        if quarter == 1:
+            summarizer = GeneralLlm(model="gpt-4o-mini", temperature=0.3)
+        elif quarter == 2:
+            # The "real" q2 bot used metaculus/gpt-4o-mini
+            summarizer = GeneralLlm(
+                model="metaculus/gpt-4o-mini", temperature=0.3
+            )
+        elif quarter == 3:
+            summarizer = GeneralLlm(model="gpt-4o-mini", temperature=0.3)
+        else:
+            # We assume LLMs other than the default and research need to be
+            # configured explicitly through llms
+            summarizer = GeneralLlm(
+                model="openai/gpt-4o-mini", temperature=0.1
+            )

@@ -1,0 +1,11 @@
+{
+  "shallow": {
+    "reasoning_depth_instructions": "Focus on the most obvious facts and quick analysis. Don't spend time exploring nuanced details or complex scenarios."
+  },
+  "medium": {
+    "reasoning_depth_instructions": "Balance thoroughness with efficiency. Consider key factors and explore obvious alternative scenarios."
+  },
+  "deep": {
+    "reasoning_depth_instructions": "Conduct a thorough analysis considering multiple factors, detailed evidence, and complex interactions between variables. Explore multiple scenarios in depth."
+  }
+} 

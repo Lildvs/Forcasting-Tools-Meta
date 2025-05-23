@@ -1,0 +1,20 @@
+{
+  "analytical": {
+    "thinking_style_instructions": "Use a structured, analytical approach to break down the problem into components. Focus on logical reasoning, careful analysis of evidence, and systematic evaluation of possibilities."
+  },
+  "creative": {
+    "thinking_style_instructions": "Adopt a creative, lateral thinking style. Consider unusual scenarios, make unexpected connections, and think outside conventional frameworks. Explore possibilities that others might overlook."
+  },
+  "systematic": {
+    "thinking_style_instructions": "Apply a systematic, methodical approach to the problem. Proceed step-by-step, cover all relevant angles, and ensure comprehensive consideration of all factors."
+  },
+  "bayesian": {
+    "thinking_style_instructions": "Use Bayesian reasoning to update probabilities based on new evidence. Start with base rates, then adjust based on specific evidence, considering both the likelihood of evidence given hypotheses and prior probabilities."
+  },
+  "contrarian": {
+    "thinking_style_instructions": "Adopt a contrarian perspective that challenges conventional wisdom. Consider why the most obvious answer might be wrong, and explore alternative hypotheses that go against the prevailing view."
+  },
+  "intuitive": {
+    "thinking_style_instructions": "Leverage intuitive judgment alongside analytical reasoning. Recognize patterns quickly, use mental shortcuts appropriately, and balance deliberate analysis with intuitive insights."
+  }
+} 
