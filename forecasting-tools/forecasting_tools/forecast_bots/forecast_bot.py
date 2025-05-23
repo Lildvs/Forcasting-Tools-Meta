@@ -41,6 +41,7 @@ from forecasting_tools.forecast_helpers.metaculus_api import MetaculusApi
 from forecasting_tools.forecast_helpers.search_manager import SearchManager
 from forecasting_tools.personality_management import PersonalityManager
 from forecasting_tools.util.cache_manager import CacheManager
+from forecasting_tools.llm_config import LLMConfigManager
 
 T = TypeVar("T")
 
@@ -977,67 +978,57 @@ class ForecastBot(ABC):
     def _llm_config_defaults(cls) -> dict[str, str | GeneralLlm]:
         """
         Return the default LLM configuration. This can be overridden by subclasses.
-        Default is to use GPT-4.1 for all keys.
+        Default is to use LLMConfigManager to get standardized configurations.
         
         Returns:
             A dictionary mapping LLM names to LLM models or strings
         """
-        # Initialize empty dictionary to avoid NameError
+        # Use our centralized LLM configuration manager
+        config = LLMConfigManager.get_default_config()
+        
+        # Convert config format to the expected format for this method
         llms = {}
         
+        # Set up default LLM
+        default_config = config.get("default", {"model": "gpt-4.1", "temperature": 0.3})
+        llms["default"] = GeneralLlm(
+            model=default_config["model"], 
+            temperature=default_config.get("temperature", 0.3)
+        )
+        
+        # Set up summarizer LLM
+        summarizer_config = config.get("summarizer", {"model": "gpt-4o-mini", "temperature": 0.1})
+        llms["summarizer"] = GeneralLlm(
+            model=summarizer_config["model"], 
+            temperature=summarizer_config.get("temperature", 0.1)
+        )
+        
+        # Set up researcher LLM
+        researcher_config = config.get("researcher", {"model": "gpt-4o", "temperature": 0.1})
+        
+        # For researcher, we have special handling for different providers
+        researcher = None
         if os.getenv("OPENAI_API_KEY"):
-            main_default_llm = GeneralLlm(model="gpt-4.1", temperature=0.3)
-        elif os.getenv("ANTHROPIC_API_KEY"):
-            main_default_llm = GeneralLlm(
-                model="claude-3-7-sonnet-latest", temperature=0.3
+            researcher = GeneralLlm(
+                model=researcher_config["model"], 
+                temperature=researcher_config.get("temperature", 0.1)
+            )
+        elif os.getenv("PERPLEXITY_API_KEY"):
+            researcher = "perplexity/news-summaries"
+        elif os.getenv("EXA_API_KEY"):
+            researcher = GeneralLlm(
+                model="perplexity/sonar-pro", 
+                temperature=0.1
             )
         elif os.getenv("OPENROUTER_API_KEY"):
-            main_default_llm = GeneralLlm(
-                model="openrouter/openai/gpt-4.1", temperature=0.3
+            researcher = GeneralLlm(
+                model="openrouter/perplexity/sonar-reasoning", 
+                temperature=0.1
             )
-        elif os.getenv("METACULUS_TOKEN"):
-            main_default_llm = GeneralLlm(
-                model="metaculus/gpt-4.1", temperature=0.3
-            )
-        else:
-            main_default_llm = GeneralLlm(model="gpt-4.1", temperature=0.3)
-
-        if os.getenv("OPENAI_API_KEY"):
-            summarizer = GeneralLlm(model="gpt-4o-mini", temperature=0.3)
-        elif os.getenv("METACULUS_TOKEN"):
-            summarizer = GeneralLlm(
-                model="metaculus/gpt-4o-mini", temperature=0.3
-            )
-        else:
-            summarizer = GeneralLlm(model="gpt-4o-mini", temperature=0.3)
-
-        if not llms.get("researcher"):
-            logger.info(
-                "No researcher LLM provided. Using default from environment."
-            )
-            researcher = None
-            if os.getenv("OPENAI_API_KEY"):
-                researcher = GeneralLlm(
-                    model="openai/gpt-4o-mini", temperature=0.1
-                )
-            elif os.getenv("PERPLEXITY_API_KEY"):
-                researcher = "perplexity/news-summaries"
-            elif os.getenv("EXA_API_KEY"):
-                researcher = GeneralLlm(
-                    model="perplexity/sonar-pro", temperature=0.1
-                )
-            elif os.getenv("OPENROUTER_API_KEY"):
-                researcher = GeneralLlm(
-                    model="openrouter/perplexity/sonar-reasoning", temperature=0.1
-                )
-            else:
-                researcher = None
-
-        return {
-            "default": main_default_llm,
-            "summarizer": summarizer,
-            "researcher": researcher,
-        }
+            
+        llms["researcher"] = researcher
+        
+        return llms
 
     @classmethod
     def _get_default_llm_for_quarter(cls, quarter: int) -> GeneralLlm:

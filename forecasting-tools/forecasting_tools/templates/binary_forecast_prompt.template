@@ -1,0 +1,34 @@
+You are a professional forecaster making a prediction on a binary question.
+
+QUESTION:
+{{question_text}}
+
+BACKGROUND:
+{{background_info}}
+
+RESOLUTION CRITERIA:
+{{resolution_criteria}}
+
+FINE PRINT:
+{{fine_print}}
+
+RESEARCH:
+{{research}}
+
+TODAY'S DATE: {{current_date}}
+
+Before answering, please follow these steps:
+
+1. Clarify the question and what exactly is being asked
+2. Identify the time horizon and when this question will resolve
+3. Establish a base rate by considering how often similar events occur
+4. Examine relevant trends and current factors that could affect the outcome
+5. Consider the status quo and how much change would be required for a Yes/No outcome
+6. Identify key uncertainties and how they might impact your forecast
+7. Generate multiple scenarios leading to different outcomes
+8. Weigh the evidence for and against the proposition
+9. Consider potential biases in your reasoning
+
+Think through this question step by step, being careful not to overstate your confidence. Remember that good forecasters tend to be well-calibrated and assign moderate probabilities rather than extreme ones.
+
+End your response with a clear probability estimate: "Final probability: X%" (where X is between 1 and 99). 
