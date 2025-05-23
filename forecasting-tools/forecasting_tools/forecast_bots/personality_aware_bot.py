@@ -13,10 +13,10 @@ from typing import Optional, Dict, Any
 
 from forecasting_tools.ai_models.general_llm import GeneralLlm
 from forecasting_tools.data_models.forecast_report import (
-    NumericDistribution,
-    PredictedOptionList,
     ReasonedPrediction,
 )
+from forecasting_tools.data_models.numeric_report import NumericDistribution
+from forecasting_tools.data_models.multiple_choice_report import PredictedOptionList
 from forecasting_tools.data_models.questions import (
     BinaryQuestion,
     MetaculusQuestion,
@@ -24,7 +24,7 @@ from forecasting_tools.data_models.questions import (
     NumericQuestion,
 )
 from forecasting_tools.forecast_bots.forecast_bot import ForecastBot
-from forecasting_tools.forecast_helpers.perplexity_searcher import Perplexity
+from forecasting_tools.ai_models.deprecated_model_classes.perplexity import Perplexity
 from forecasting_tools.forecast_helpers.prediction_extractor import PredictionExtractor
 from forecasting_tools.personality_management import PersonalityManager
 from forecasting_tools.personality_management.processors import ProcessorFactory

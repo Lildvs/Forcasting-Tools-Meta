@@ -189,13 +189,13 @@ class CostTrackingBot:
             cost_tracker: Custom CostTracker instance (optional)
             **kwargs: Passed to the bot constructor
         """
-        from forecasting_tools import ForecastingBot
+        from forecasting_tools.forecast_bots.forecast_bot import ForecastBot
         
         # Import locally to avoid circular imports
         if bot_cls is None:
             # Use the default ForecastingBot
-            self.bot_cls = ForecastingBot
-            self.bot = ForecastingBot(**kwargs)
+            self.bot_cls = ForecastBot
+            self.bot = ForecastBot(**kwargs)
         elif isinstance(bot_cls, type):
             # bot_cls is a class, instantiate it
             self.bot_cls = bot_cls
