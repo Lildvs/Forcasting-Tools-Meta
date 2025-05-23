@@ -6,7 +6,7 @@ This module provides configuration for LLM models used throughout the applicatio
 
 import os
 import logging
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 
 logger = logging.getLogger(__name__)
 
@@ -29,19 +29,29 @@ class LLMConfigManager:
         # Default configuration
         config = {
             "default": {
-                "model": "gpt-4.1",  # Latest GPT-4 version
+                "model": "gpt-4.1",  # Latest GPT-4 version for primary reasoning
                 "temperature": 0.3,
-                "max_tokens": 4000
+                "max_tokens": 4000,
+                "description": "Primary reasoning layer for initial query understanding and final forecast generation"
             },
             "researcher": {
-                "model": "gpt-4o",  # More cost-effective for research
+                "model": "perplexity/sonar-medium-online",  # Research-focused model with web access
                 "temperature": 0.1,
-                "max_tokens": 4000
+                "max_tokens": 4000,
+                "description": "Specialized research layer for gathering detailed information from multiple sources",
+                "fallbacks": ["gpt-4o", "perplexity/sonar-small-online"]
             },
             "summarizer": {
                 "model": "gpt-4o-mini",  # Efficient for summarization
                 "temperature": 0.1,
-                "max_tokens": 2000
+                "max_tokens": 2000,
+                "description": "Lightweight model for condensing research into key insights"
+            },
+            "evaluator": {
+                "model": "gpt-4o",  # Reliable model for evaluating forecasts
+                "temperature": 0.2,
+                "max_tokens": 3000,
+                "description": "Specialized layer for evaluating forecast quality and calibration"
             }
         }
         
@@ -54,6 +64,9 @@ class LLMConfigManager:
             
         if os.getenv("SUMMARIZER_LLM_MODEL"):
             config["summarizer"]["model"] = os.getenv("SUMMARIZER_LLM_MODEL")
+            
+        if os.getenv("EVALUATOR_LLM_MODEL"):
+            config["evaluator"]["model"] = os.getenv("EVALUATOR_LLM_MODEL")
         
         return config
     
@@ -91,4 +104,52 @@ class LLMConfigManager:
             return config[purpose]
         else:
             logger.warning(f"No config found for purpose: '{purpose}'. Using default config.")
-            return config["default"] 
+            return config["default"]
+    
+    @staticmethod
+    def get_fallback_models(purpose: str) -> List[str]:
+        """
+        Get fallback models for a specific purpose if the primary model fails.
+        
+        Args:
+            purpose: The purpose (default, researcher, summarizer)
+            
+        Returns:
+            List of fallback model names
+        """
+        config = LLMConfigManager.get_default_config()
+        if purpose in config and "fallbacks" in config[purpose]:
+            return config[purpose]["fallbacks"]
+        return []
+    
+    @staticmethod 
+    def get_workflow_description() -> str:
+        """
+        Returns a description of the multi-layered LLM workflow.
+        
+        Returns:
+            String describing the workflow
+        """
+        return """
+        The forecasting system uses a multi-layered LLM approach:
+        
+        1. Base Layer (GPT-4.1): 
+           - Handles initial query understanding
+           - Formulates research strategy
+           - Performs initial reasoning
+        
+        2. Researcher Layer (Perplexity):
+           - Conducts extensive web research
+           - Gathers up-to-date information
+           - Compiles relevant data from multiple sources
+        
+        3. Summarizer Layer (GPT-4o-mini):
+           - Condenses research into key insights
+           - Extracts most relevant information
+           - Creates structured summaries
+        
+        4. Final Base Layer (GPT-4.1 again):
+           - Takes all processed information
+           - Performs final reasoning and computation
+           - Generates the final forecast with confidence levels
+        """ 

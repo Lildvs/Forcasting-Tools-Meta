@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Any, Callable, Tuple, Union
 import os
 from pathlib import Path
 import base64
+import plotly.graph_objects as go
 
 def load_css(css_file: Optional[str] = None, css_string: Optional[str] = None):
     """
@@ -348,4 +349,147 @@ def show_notification(message: str, type: str = "info", duration: int = 3):
         </div>
         """, 
         unsafe_allow_html=True
-    ) 
+    )
+
+def display_llm_workflow_diagram() -> None:
+    """
+    Display a diagram of the multi-layered LLM workflow used in forecasting.
+    
+    This function creates a visual representation of how different LLM models
+    work together in the forecasting process.
+    """
+    # Define the workflow steps and models
+    steps = [
+        {"name": "Base LLM (Initial)", "model": "GPT-4.1", "description": "Initial analysis & query planning", "color": "#1f77b4"},
+        {"name": "Researcher LLM", "model": "Perplexity", "description": "Advanced data gathering", "color": "#ff7f0e"},
+        {"name": "Summarizer LLM", "model": "GPT-4o-mini", "description": "Condense insights", "color": "#2ca02c"},
+        {"name": "Base LLM (Final)", "model": "GPT-4.1", "description": "Final integration & reasoning", "color": "#1f77b4"}
+    ]
+    
+    # Create figure with plotly
+    fig = go.Figure()
+    
+    # Add nodes
+    y_positions = [0, 0, 0, 0]
+    x_positions = [0, 1, 2, 3]
+    
+    for i, step in enumerate(steps):
+        # Add node
+        fig.add_trace(go.Scatter(
+            x=[x_positions[i]],
+            y=[y_positions[i]],
+            mode='markers+text',
+            marker=dict(
+                size=30,
+                color=step["color"],
+                symbol='circle',
+                line=dict(color='white', width=2)
+            ),
+            text=[f"{i+1}"],
+            textfont=dict(color='white', size=16),
+            hoverinfo='text',
+            hovertext=f"{step['name']}: {step['description']}",
+            name=step['name']
+        ))
+        
+        # Add text below node
+        fig.add_annotation(
+            x=x_positions[i],
+            y=y_positions[i] - 0.15,
+            text=f"<b>{step['name']}</b><br>{step['model']}",
+            showarrow=False,
+            font=dict(size=10)
+        )
+        
+        # Add arrows between nodes
+        if i < len(steps) - 1:
+            fig.add_annotation(
+                x=(x_positions[i] + x_positions[i+1]) / 2,
+                y=y_positions[i],
+                text="",
+                showarrow=True,
+                arrowhead=2,
+                arrowsize=1.5,
+                arrowwidth=2,
+                arrowcolor="#555",
+                ax=30,
+                ay=0
+            )
+    
+    # Update layout
+    fig.update_layout(
+        title="Multi-Layered LLM Forecasting Workflow",
+        showlegend=False,
+        plot_bgcolor='white',
+        margin=dict(l=20, r=20, t=60, b=20),
+        xaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+            range=[-0.5, 3.5]
+        ),
+        yaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+            range=[-0.5, 0.5]
+        ),
+        width=700,
+        height=200
+    )
+    
+    # Display the figure
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Display description of each stage
+    with st.expander("How the LLM Workflow Works"):
+        st.markdown("""
+        ### Multi-Stage LLM Forecast Generation
+        
+        Our system uses a sophisticated multi-layered approach to generate high-quality forecasts:
+        
+        **Stage 1: Base LLM (Initial Analysis)**
+        - Model: GPT-4.1
+        - Analyzes the question in depth
+        - Formulates research strategies
+        - Identifies key aspects and uncertainties
+        
+        **Stage 2: Researcher LLM**
+        - Model: Perplexity with web access
+        - Conducts real-time research from multiple sources
+        - Gathers relevant data, statistics, and expert opinions
+        - Compiles comprehensive research with citations
+        
+        **Stage 3: Summarizer LLM**
+        - Model: GPT-4o-mini
+        - Distills research into key insights
+        - Identifies patterns and contradictions
+        - Creates structured summaries of findings
+        
+        **Stage 4: Base LLM (Final Integration)**
+        - Model: GPT-4.1
+        - Integrates all processed information
+        - Applies forecasting methodologies
+        - Generates final prediction with confidence levels
+        - Provides detailed reasoning
+        """)
+        
+        # Display benefits
+        st.markdown("### Benefits of This Approach")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            - **Higher accuracy** through specialized models
+            - **Cost efficiency** by using right-sized models
+            - **Up-to-date information** via web research
+            - **Comprehensive reasoning** that includes multiple perspectives
+            """)
+        
+        with col2:
+            st.markdown("""
+            - **Reduced hallucinations** through fact verification
+            - **More calibrated uncertainty** estimation
+            - **Clear reasoning steps** for transparency
+            - **Better handling of complex questions**
+            """) 

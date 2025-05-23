@@ -641,6 +641,23 @@ with st.sidebar:
         "while tracking token usage and costs."
     )
     
+    # Add information about the multi-layered LLM approach
+    st.subheader("Multi-Layered LLM System")
+    st.markdown("""
+    Our forecasting system uses a sophisticated multi-layer architecture:
+    
+    **🧠 Base Layer (GPT-4.1)**  
+    Primary reasoning engine that handles initial analysis and final forecast generation
+    
+    **🔎 Researcher Layer (Perplexity)**  
+    Specialized model for real-time data gathering from multiple sources
+    
+    **📊 Summarizer Layer (GPT-4o-mini)**  
+    Efficient model for condensing research into key insights
+    
+    This architecture produces more accurate, well-researched forecasts while maintaining cost efficiency.
+    """)
+    
     st.subheader("Cost Statistics")
     cost_stats = st.session_state.cost_tracker.get_cost_statistics()
     

@@ -167,10 +167,13 @@ class ForecastBot(ABC):
         use_cache: Optional[bool] = None
     ) -> str:
         """
-        Perform research on a question using the SearchManager.
+        Perform research on a question using the SearchManager with a multi-layered LLM approach.
         
-        This method provides a unified interface for all forecasting bots to perform
-        research using different search providers before generating forecasts.
+        This method implements the full research pipeline:
+        1. Base LLM formulates the research strategy and queries
+        2. Researcher LLM conducts detailed research through external providers
+        3. Summarizer LLM condenses and extracts key insights
+        4. Base LLM integrates results into final research output
         
         Args:
             question: The question to research
@@ -198,47 +201,190 @@ class ForecastBot(ABC):
                 logger.info(f"Using cached research for question {question.question_id}")
                 return cached_result
         
-        # Process the query using personality traits
-        query = question.question_text
-        if hasattr(self, "processor") and hasattr(self.processor, "process_research_query"):
-            processed_query = self.processor.process_research_query(question)
-            query = processed_query
-        
-        # Enhance the search query with additional context from the question
-        if question.background_info:
-            query = f"{query}\n\nBackground: {question.background_info}"
+        # STAGE 1: Base LLM (Initial analysis and research planning)
+        logger.info(f"Stage 1: Initial analysis with base LLM for question {question.question_id}")
+        try:
+            base_llm = self.get_llm("default", "llm")
             
-        if question.resolution_criteria:
-            query = f"{query}\n\nResolution criteria: {question.resolution_criteria}"
+            # Generate research plan and query formulation
+            research_plan_prompt = f"""
+            I need to research the following forecasting question thoroughly:
+            
+            QUESTION: {question.question_text}
+            
+            {f"BACKGROUND: {question.background_info}" if question.background_info else ""}
+            {f"RESOLUTION CRITERIA: {question.resolution_criteria}" if question.resolution_criteria else ""}
+            {f"FINE PRINT: {question.fine_print}" if question.fine_print else ""}
+            
+            Please help me formulate a research plan:
+            1. Identify 3-5 key aspects of this question that need investigation
+            2. For each aspect, create a specific research query that would yield valuable information
+            3. Determine what types of sources would be most reliable for this question
+            4. Suggest any specific data points or metrics that would be particularly valuable
+            
+            Output the plan in a clear, structured format.
+            """
+            
+            research_plan = await base_llm.invoke(research_plan_prompt)
+            logger.debug(f"Research plan generated: {len(research_plan)} chars")
+            
+            # Process the query using personality traits if available
+            base_query = question.question_text
+            if hasattr(self, "processor") and hasattr(self.processor, "process_research_query"):
+                processed_query = self.processor.process_research_query(question)
+                base_query = processed_query
+            
+            # Enhance the search query with research plan insights
+            enhanced_query = f"""
+            {base_query}
+            
+            Additional context:
+            {f"Background: {question.background_info}" if question.background_info else ""}
+            {f"Resolution criteria: {question.resolution_criteria}" if question.resolution_criteria else ""}
+            
+            Research focus:
+            {research_plan}
+            """
+            
+        except Exception as e:
+            logger.warning(f"Error in Stage 1 (Base LLM planning): {e}")
+            # Fall back to basic query if the enhanced approach fails
+            enhanced_query = f"{question.question_text}\n\n"
+            if question.background_info:
+                enhanced_query += f"Background: {question.background_info}\n\n"
+            if question.resolution_criteria:
+                enhanced_query += f"Resolution criteria: {question.resolution_criteria}"
         
-        # Perform the search
-        research_results = await self.search_manager.search(
-            query=query,
-            provider=search_provider,
-            search_type=search_type,
-            search_depth=search_depth,
-            use_cache=use_cache
-        )
-        
-        # Check if search failed
-        if research_results.startswith("ERROR:"):
-            logger.warning(f"Search failed: {research_results}")
-            # Fallback to an empty research result with explanation
-            research_results = (
-                "Unable to retrieve up-to-date information due to search provider issues. "
-                "The forecast will be based on existing knowledge only."
+        # STAGE 2: Researcher LLM (External data gathering)
+        logger.info(f"Stage 2: Detailed research with researcher LLM for question {question.question_id}")
+        try:
+            # Perform the search using the specialized researcher LLM/provider
+            research_results = await self.search_manager.search(
+                query=enhanced_query,
+                provider=search_provider,
+                search_type=search_type,
+                search_depth=search_depth,
+                use_cache=use_cache
             )
+            
+            # Check if search failed and try fallbacks if available
+            if research_results.startswith("ERROR:"):
+                logger.warning(f"Primary research failed: {research_results}")
+                
+                # Try fallback models
+                fallbacks = LLMConfigManager.get_fallback_models("researcher")
+                for fallback in fallbacks:
+                    logger.info(f"Trying fallback researcher: {fallback}")
+                    fallback_results = await self.search_manager.search(
+                        query=enhanced_query,
+                        provider=fallback,
+                        search_type=search_type,
+                        search_depth="medium",  # Use medium depth for fallbacks
+                        use_cache=use_cache
+                    )
+                    
+                    if not fallback_results.startswith("ERROR:"):
+                        research_results = fallback_results
+                        logger.info(f"Fallback research successful with {fallback}")
+                        break
+                
+                # If all fallbacks failed, create a basic research note
+                if research_results.startswith("ERROR:"):
+                    research_results = (
+                        "Unable to retrieve up-to-date information due to search provider issues. "
+                        "The forecast will be based on existing knowledge only."
+                    )
+            
+        except Exception as e:
+            logger.warning(f"Error in Stage 2 (Researcher LLM): {e}")
+            research_results = (
+                f"Error during research phase: {str(e)}\n\n"
+                "The forecast will proceed with limited information."
+            )
+        
+        # STAGE 3: Summarizer LLM (Condensing and extracting key insights)
+        logger.info(f"Stage 3: Summarization with summarizer LLM for question {question.question_id}")
+        try:
+            # Only summarize if we have substantial research to process
+            if len(research_results) > 1000:
+                summarizer_llm = self.get_llm("summarizer", "llm")
+                
+                summary_prompt = f"""
+                Please analyze and extract key insights from the following research on this question:
+                
+                QUESTION: {question.question_text}
+                
+                RESEARCH DATA:
+                {research_results}
+                
+                Please:
+                1. Identify the most important facts and data points
+                2. Extract directly relevant quotes and statistics
+                3. Note any contradictory information or viewpoints
+                4. Organize the information by relevance to the question
+                5. Preserve all URLs and sources for citation
+                
+                Format your response as structured markdown with clear sections and bullet points.
+                """
+                
+                summarized_research = await summarizer_llm.invoke(summary_prompt)
+                logger.debug(f"Research summarized: {len(summarized_research)} chars from {len(research_results)} chars")
+            else:
+                # For limited research, skip summarization
+                summarized_research = research_results
+                
+        except Exception as e:
+            logger.warning(f"Error in Stage 3 (Summarizer LLM): {e}")
+            # Fall back to original research if summarization fails
+            summarized_research = research_results
+        
+        # STAGE 4: Base LLM again (Final integration and formatting)
+        logger.info(f"Stage 4: Final integration with base LLM for question {question.question_id}")
+        try:
+            # For shorter research, we can skip this final step
+            if len(research_results) > 1500:
+                base_llm = self.get_llm("default", "llm")
+                
+                integration_prompt = f"""
+                I need you to create a comprehensive research report for a forecasting question.
+                
+                QUESTION: {question.question_text}
+                
+                Here is the summarized research:
+                {summarized_research}
+                
+                Please:
+                1. Integrate this research into a cohesive, well-structured report
+                2. Organize into logical sections with clear headings
+                3. Highlight key facts, statistics, and informed perspectives
+                4. Note areas of uncertainty or conflicting information
+                5. Maintain all source citations and links
+                6. Add a brief section on "Key Uncertainties" at the end
+                
+                Format the response as markdown with clear headings and structure.
+                """
+                
+                final_research = await base_llm.invoke(integration_prompt)
+                logger.debug(f"Final research compiled: {len(final_research)} chars")
+            else:
+                # For limited research, skip final integration
+                final_research = summarized_research
+                
+        except Exception as e:
+            logger.warning(f"Error in Stage 4 (Base LLM integration): {e}")
+            # Fall back to the summarized research if integration fails
+            final_research = summarized_research
         
         # Cache the result if enabled
         if use_cache:
             await self.cache_manager.set(
                 cache_key, 
-                research_results, 
+                final_research, 
                 namespace="research",
                 ttl=86400  # 24 hours TTL
             )
         
-        return research_results
+        return final_research
 
     @overload
     async def forecast_on_tournament(

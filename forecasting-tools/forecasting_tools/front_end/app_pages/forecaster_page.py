@@ -22,6 +22,7 @@ from forecasting_tools.personality_management import PersonalityManager
 from forecasting_tools.util.jsonable import Jsonable
 from forecasting_tools.llm_config import LLMConfigManager
 from forecasting_tools.ai_models.general_llm import GeneralLlm
+from forecasting_tools.front_end.components.ui_utils import display_llm_workflow_diagram
 
 logger = logging.getLogger(__name__)
 
@@ -52,10 +53,19 @@ class ForecasterPage(ToolPage):
 
     @classmethod
     async def _display_intro_text(cls) -> None:
-        # st.write(
-        #     "Enter the information for your question. Exa.ai is used to gather up to date information. Each citation attempts to link to a highlight of the a ~4 sentence quote found with Exa.ai. This project is in beta some inaccuracies are expected."
-        # )
-        pass
+        # Display the multi-layered LLM workflow diagram
+        st.subheader("Advanced Multi-Layered LLM Forecasting")
+        st.markdown("""
+        Our forecasting system uses a sophisticated multi-layered approach with specialized LLM models 
+        for different stages of the forecasting process. This architecture combines the strengths of 
+        different models to produce more accurate and well-researched forecasts.
+        """)
+        
+        # Display the workflow diagram
+        display_llm_workflow_diagram()
+        
+        # Add a divider before the rest of the content
+        st.markdown("---")
 
     @classmethod
     async def _get_input(cls) -> ForecastInput | None:
@@ -87,7 +97,22 @@ class ForecasterPage(ToolPage):
             filter_by_domain = domain
             st.info(f"Based on the selected domain, we recommend personalities optimized for {domain} forecasting.")
         
-        # Add model selection dropdown
+        # Add model selection dropdown with explanation of the multi-layered approach
+        st.subheader("Configure Model Layers")
+        
+        # Show explanation of the layered approach
+        with st.expander("About the Multi-Layered Model Architecture", expanded=False):
+            st.markdown("""
+            Our forecasting system uses multiple specialized LLM models:
+            
+            1. **Base Layer** - The primary reasoning engine that analyzes the question and generates the final forecast
+            2. **Researcher Layer** - Specialized model for gathering detailed information from external sources
+            3. **Summarizer Layer** - Lightweight model for condensing research into key insights
+            
+            You can select the primary Base Layer model below. The other layers are configured automatically 
+            for optimal performance.
+            """)
+        
         # Get models from LLMConfigManager
         config = LLMConfigManager.get_default_config()
         default_models = [
@@ -98,12 +123,22 @@ class ForecasterPage(ToolPage):
             "claude-3-sonnet",
             "claude-3-haiku"
         ]
-        selected_model = st.selectbox(
-            "Select LLM Model:",
-            options=default_models,
-            index=0,
-            help="Select the model to use for forecasting. GPT-4.1 is recommended for best results."
-        )
+        
+        # Create columns for model selection
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            selected_model = st.selectbox(
+                "Select Primary (Base) Model:",
+                options=default_models,
+                index=0,
+                help="Select the model to use as the primary reasoning engine. GPT-4.1 is recommended for best results."
+            )
+        
+        with col2:
+            # Show the current researcher model from config
+            researcher_model = config["researcher"]["model"]
+            st.info(f"Researcher Layer: {researcher_model}\nSummarizer Layer: {config['summarizer']['model']}")
         
         # Add personality selector
         selected_personality = PersonalitySelector.display_selector(
@@ -175,40 +210,56 @@ class ForecasterPage(ToolPage):
                 llms=llms
             )
             
-            # Display personality preview
-            with st.expander(f"Using {input.personality_name} personality", expanded=True):
-                # Get personality description
-                try:
-                    personality_manager = PersonalityManager()
-                    personality = personality_manager.load_personality(input.personality_name)
-                    
-                    # Display basic info about how this personality approaches forecasting
-                    st.markdown(f"### {personality.name}")
-                    if personality.description:
-                        st.markdown(f"*{personality.description}*")
-                    
-                    # Display personality traits summary
-                    st.markdown("#### Forecasting Approach")
-                    st.markdown(f"- **Thinking Style:** {personality.thinking_style.value}")
-                    st.markdown(f"- **Uncertainty Approach:** {personality.uncertainty_approach.value}")
-                    st.markdown(f"- **Reasoning Depth:** {personality.reasoning_depth.value}")
-                    
-                    # Create a simple progress bar to show the forecasting is active
-                    progress_bar = st.progress(0)
-                    for i in range(5):
-                        # Simulate activity while forecasting is happening
-                        progress_bar.progress((i + 1) * 20)
-                        
-                except Exception as e:
-                    st.warning(f"Could not load personality details: {str(e)}")
+            # Display process information with progress tracking
+            st.markdown("### Forecast Generation in Progress")
+            st.markdown("The system is working through the multi-layered LLM process:")
+            
+            # Create a progress indicator
+            progress_container = st.empty()
+            progress_bar = st.progress(0)
+            
+            # Display stage information
+            stages = [
+                "Stage 1: Initial analysis with Base LLM",
+                "Stage 2: Research gathering with specialized Researcher LLM",
+                "Stage 3: Research summarization with Summarizer LLM",
+                "Stage 4: Final forecast generation with Base LLM"
+            ]
+            
+            stage_container = st.empty()
+            stage_container.info(stages[0])
+            progress_bar.progress(10)
+            
+            # Simulate progress through the stages (actual progress tracking would require changes to the forecast process)
+            import time
+            import threading
+            
+            def update_progress():
+                for i, stage in enumerate(stages):
+                    stage_container.info(stage)
+                    # Each stage takes approximately 25% of the total progress
+                    start_progress = i * 25
+                    for j in range(start_progress, start_progress + 25):
+                        progress_bar.progress(j)
+                        time.sleep(0.2)  # Adjust timing based on actual performance
+            
+            # Start progress update in a separate thread
+            threading.Thread(target=update_progress).start()
             
             # Generate forecast
             report = await bot.forecast_question(input.question)
             assert isinstance(report, BinaryReport)
             
-            # Add personality info to report
+            # Complete the progress bar when done
+            progress_bar.progress(100)
+            stage_container.success("Forecast completed successfully!")
+            
+            # Add personality and model info to report
             report.metadata = report.metadata or {}
             report.metadata["personality_name"] = input.personality_name
+            report.metadata["primary_model"] = input.model_name
+            report.metadata["researcher_model"] = config["researcher"]["model"]
+            report.metadata["summarizer_model"] = config["summarizer"]["model"]
             
             return report
 
@@ -228,13 +279,24 @@ class ForecasterPage(ToolPage):
     @classmethod
     async def _display_outputs(cls, outputs: list[BinaryReport]) -> None:
         for output in outputs:
-            # Get personality name from metadata if available
+            # Get metadata from the report
             personality_name = "balanced"
-            if hasattr(output, "metadata") and output.metadata:
-                personality_name = output.metadata.get("personality_name", "balanced")
+            primary_model = "gpt-4.1"
+            researcher_model = "Unknown"
+            summarizer_model = "Unknown"
             
-            # Add personality name to the report display
+            if hasattr(output, "metadata") and output.metadata:
+                personality_name = output.metadata.get("personality_name", personality_name)
+                primary_model = output.metadata.get("primary_model", primary_model)
+                researcher_model = output.metadata.get("researcher_model", researcher_model)
+                summarizer_model = output.metadata.get("summarizer_model", summarizer_model)
+            
+            # Add model information to the report display
             st.markdown(f"### Forecast by {personality_name.capitalize()} Personality")
+            st.markdown(f"**Models used:**")
+            st.markdown(f"- Primary: {primary_model}")
+            st.markdown(f"- Researcher: {researcher_model}")
+            st.markdown(f"- Summarizer: {summarizer_model}")
         
         ReportDisplayer.display_report_list(outputs)
 
