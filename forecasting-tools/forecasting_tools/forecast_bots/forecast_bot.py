@@ -871,6 +871,9 @@ class ForecastBot(ABC):
         Returns:
             A dictionary mapping LLM names to LLM models or strings
         """
+        # Initialize empty dictionary to avoid NameError
+        llms = {}
+        
         if os.getenv("OPENAI_API_KEY"):
             main_default_llm = GeneralLlm(model="gpt-4.1", temperature=0.3)
         elif os.getenv("ANTHROPIC_API_KEY"):
