@@ -57,8 +57,47 @@ class PersonalityManager:
         
         # Load the specified personality or the default
         self._current_personality: Optional[PersonalityConfig] = None
-        if personality_name:
-            self.load_personality(personality_name)
+        
+        # Always load a personality (default to "balanced")
+        try:
+            if personality_name:
+                self.load_personality(personality_name)
+            else:
+                # Try to load "balanced" as default, fall back to "analytical" if not found
+                try:
+                    self.load_personality("balanced")
+                except FileNotFoundError:
+                    try:
+                        self.load_personality("analytical")
+                    except FileNotFoundError:
+                        # If both default personalities are missing, create an empty default
+                        default_config = {
+                            "name": "default",
+                            "description": "Default personality created at runtime",
+                            "reasoning_depth": "medium",
+                            "uncertainty_approach": "probabilistic",
+                            "thinking_style": "systematic",
+                            "expert_persona": "forecaster",
+                            "temperature": 0.1
+                        }
+                        self._current_personality = PersonalityConfig.from_dict(default_config)
+                        self._personality_cache["default"] = self._current_personality
+        except Exception as e:
+            # Provide a useful error message but continue with None personality
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to load personality: {e}")
+            # Create a minimal default personality
+            default_config = {
+                "name": "minimal_default",
+                "description": "Minimal default personality created after error",
+                "reasoning_depth": "medium",
+                "uncertainty_approach": "probabilistic",
+                "thinking_style": "systematic",
+                "expert_persona": "forecaster",
+                "temperature": 0.1
+            }
+            self._current_personality = PersonalityConfig.from_dict(default_config)
+            self._personality_cache["minimal_default"] = self._current_personality
     
     def load_personality(self, name: str) -> PersonalityConfig:
         """

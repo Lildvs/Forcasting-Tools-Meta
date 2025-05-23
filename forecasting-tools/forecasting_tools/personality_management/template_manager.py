@@ -242,4 +242,165 @@ class TemplateManager:
             placeholder = f"{{{var_name}}}"
             content = content.replace(placeholder, str(var_value))
             
+        return content
+        
+    def apply_template(self, template_name: str, personality_config, **kwargs) -> str:
+        """
+        Apply a template using a personality configuration.
+        
+        Args:
+            template_name: Name of the template to apply
+            personality_config: The personality configuration to use
+            **kwargs: Additional variables to use in the template
+            
+        Returns:
+            The rendered template string
+        """
+        # Try to get the template
+        template = self.get_template(template_name)
+        
+        # If template not found, generate a generic one
+        if not template or "content" not in template:
+            logger.warning(f"Template not found: {template_name}, using generic fallback")
+            
+            # Create a reasonable fallback based on the template name
+            if "binary_forecast_prompt" in template_name:
+                content = """You are a professional forecaster making predictions on a binary question.
+
+Question: {question_text}
+Background information: {background_info}
+Resolution criteria: {resolution_criteria}
+Fine print: {fine_print}
+
+Think carefully through the question step by step and then provide a probability that the answer is Yes. Your answer should be a number between 0.01 (1%) and 0.99 (99%). Choose 0.5 (50%) only if you truly have no information.
+
+The current date is {current_date}.
+
+Consider all relevant factors, historical precedents, current trends, expert opinions, and available evidence.
+
+Please structure your response as follows:
+1. Examine the question carefully
+2. List key factors to consider
+3. Analyze evidence for the Yes outcome
+4. Analyze evidence for the No outcome
+5. Weigh the evidence
+6. Provide your final probability judgment
+
+End your response with a clear probability in the format "Final probability: X%" where X is between 1% and 99%."""
+            elif "numeric_forecast_prompt" in template_name:
+                content = """You are a professional forecaster making predictions on a numeric question.
+
+Question: {question_text}
+Background information: {background_info}
+Resolution criteria: {resolution_criteria}
+Fine print: {fine_print}
+{lower_bound_message}
+{upper_bound_message}
+Unit of measurement: {unit_of_measure}
+
+The current date is {current_date}.
+
+Think carefully through the question step by step. Consider all relevant factors, historical precedents, current trends, expert opinions, and available evidence.
+
+Please structure your response as follows:
+1. Examine the question carefully
+2. List key factors to consider
+3. Analyze the data and evidence
+4. Consider different scenarios (low, medium, high)
+5. Provide your forecast as a probability distribution
+
+Your forecast should include estimates at the following percentiles:
+- 5th percentile (there's only a 5% chance the actual value will be below this)
+- 25th percentile
+- 50th percentile (median)
+- 75th percentile
+- 95th percentile (there's only a 5% chance the actual value will be above this)
+
+End with "Final forecast:" followed by your probability distribution with values at each percentile."""
+            elif "multiple_choice_prompt" in template_name:
+                content = """You are a professional forecaster making predictions on a multiple-choice question.
+
+Question: {question_text}
+Background information: {background_info}
+Resolution criteria: {resolution_criteria}
+Fine print: {fine_print}
+Options: {options}
+
+The current date is {current_date}.
+
+Think carefully through the question step by step. Consider all relevant factors, historical precedents, current trends, expert opinions, and available evidence.
+
+Please structure your response as follows:
+1. Examine the question carefully
+2. List key factors to consider  
+3. Analyze each option systematically
+4. Weigh the evidence for each option
+5. Provide your probability distribution across all options
+
+For your final forecast, assign a probability to each option. The probabilities must sum to 100%.
+
+End with "Final probabilities:" followed by each option and its percentage chance."""
+            else:
+                # Generic template
+                content = """You are a professional forecaster making predictions.
+
+Question: {question_text}
+Background information: {background_info}
+Resolution criteria: {resolution_criteria}  
+Fine print: {fine_print}
+
+The current date is {current_date}.
+
+Think carefully through the question step by step. Consider all relevant factors, historical precedents, current trends, expert opinions, and available evidence.
+
+Please structure your response as follows:
+1. Examine the question carefully
+2. List key factors to consider
+3. Analyze the evidence
+4. Provide your forecast
+
+End with a clear final forecast."""
+            
+            # Create variables dictionary
+            variables = {**kwargs}
+            
+            # Add personality traits if available
+            if personality_config:
+                if hasattr(personality_config, "reasoning_depth"):
+                    variables["reasoning_depth"] = personality_config.reasoning_depth
+                if hasattr(personality_config, "uncertainty_approach"):
+                    variables["uncertainty_approach"] = personality_config.uncertainty_approach
+                if hasattr(personality_config, "thinking_style"):
+                    variables["thinking_style"] = personality_config.thinking_style
+                if hasattr(personality_config, "expert_persona"):
+                    variables["expert_persona"] = personality_config.expert_persona
+            
+            # Replace variables
+            for var_name, var_value in variables.items():
+                placeholder = f"{{{var_name}}}"
+                content = content.replace(placeholder, str(var_value))
+            
+            return content
+        
+        # Normal case - template exists
+        variables = {**kwargs}
+        
+        # Add personality traits if available  
+        if personality_config:
+            if hasattr(personality_config, "reasoning_depth"):
+                variables["reasoning_depth"] = personality_config.reasoning_depth
+            if hasattr(personality_config, "uncertainty_approach"):
+                variables["uncertainty_approach"] = personality_config.uncertainty_approach
+            if hasattr(personality_config, "thinking_style"):
+                variables["thinking_style"] = personality_config.thinking_style
+            if hasattr(personality_config, "expert_persona"):
+                variables["expert_persona"] = personality_config.expert_persona
+                
+        content = template["content"]
+        
+        # Replace variables
+        for var_name, var_value in variables.items():
+            placeholder = f"{{{var_name}}}"
+            content = content.replace(placeholder, str(var_value))
+            
         return content 
