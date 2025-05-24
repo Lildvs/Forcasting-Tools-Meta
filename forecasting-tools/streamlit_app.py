@@ -1,4 +1,6 @@
 import streamlit as st
+# Apply fixes on startup
+from forecasting_tools.startup import apply_startup_fixes
 import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
