@@ -2,6 +2,8 @@
 Compatibility layer for handling API changes between versions.
 """
 
+import os
+
 class BinaryForecastCompat:
     """
     Monkey patch to add backward compatibility to BinaryForecast class.
