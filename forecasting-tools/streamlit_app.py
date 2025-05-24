@@ -25,6 +25,87 @@ from forecasting_tools.llm_config import LLMConfigManager
 
 # Import reasoning modules
 from forecasting_tools.forecast_bots.reasoning import (
+
+# ===== DIRECT FIX FOR ATTRIBUTE ERROR =====
+# This code adds the 'prediction' property to BinaryForecast class
+try:
+    from forecasting_tools.data_models.binary_report import BinaryForecast
+    if not hasattr(BinaryForecast, "prediction"):
+        print("Adding prediction property to BinaryForecast class...")
+        BinaryForecast.prediction = property(lambda self: self.probability)
+except Exception as e:
+    import logging
+    logging.getLogger(__name__).error(f"Error applying BinaryForecast fix: {e}")
+
+# Create personalities directory and template directory if they don't exist
+try:
+    import os
+    from pathlib import Path
+    base_dir = Path(__file__).parent
+    
+    # Create personalities directory
+    personalities_dir = base_dir / "forecasting_tools" / "personality_management" / "personalities"
+    if not personalities_dir.exists():
+        print(f"Creating personalities directory: {personalities_dir}")
+        personalities_dir.mkdir(exist_ok=True, parents=True)
+    
+    # Create analytical.yaml if it doesn't exist
+    analytical_file = personalities_dir / "analytical.yaml"
+    if not analytical_file.exists():
+        print(f"Creating analytical.yaml: {analytical_file}")
+        analytical_content = '''# Analytical Personality Configuration
+# A personality that emphasizes deep analysis, systematic thinking, and data-driven reasoning
+
+name: analytical
+description: A methodical forecaster who relies heavily on systematic analysis, data-driven reasoning, and structured frameworks
+
+# Core personality traits
+reasoning_depth: deep
+uncertainty_approach: explicit
+thinking_style: analytical
+temperature: 0.3
+
+# Template variables for prompt customization
+template_variables:
+  reasoning_prefix: "I will conduct a thorough, structured analysis of the evidence and systematically evaluate different hypotheses."
+  calibration_guidance: "I should quantify uncertainties explicitly and ensure my confidence levels reflect the available evidence."
+  uncertainty_handling: "I will break down complex uncertainties into component parts and address each systematically."
+
+# Custom traits
+traits:
+  # How much the forecaster relies on data vs. intuition
+  data_reliance:
+    description: How much the forecaster relies on data versus intuition
+    value: 0.9  # 0.0 = pure intuition, 1.0 = pure data
+'''
+        with open(analytical_file, "w", encoding="utf-8") as f:
+            f.write(analytical_content)
+    
+    # Create templates directory
+    templates_dir = base_dir / "forecasting_tools" / "personality_management" / "templates"
+    if not templates_dir.exists():
+        print(f"Creating templates directory: {templates_dir}")
+        templates_dir.mkdir(exist_ok=True, parents=True)
+    
+    # Create binary_forecast_prompt.json
+    template_file = templates_dir / "binary_forecast_prompt.json"
+    if not template_file.exists():
+        print(f"Creating binary_forecast_prompt.json: {template_file}")
+        template_content = '''{
+    "template": "You are a {{thinking_style}} forecaster with a {{uncertainty_approach}} approach to uncertainty. You have been asked to forecast the probability of a binary event.\n\nQuestion: {{question}}\n\n{{#if resolution_criteria}}Resolution Criteria: {{resolution_criteria}}{{/if}}\n\n{{#if background_info}}Background Information: {{background_info}}{{/if}}\n\n{{#if research}}Research:\n{{research}}{{/if}}\n\nIn responding to this forecasting request:\n- {{reasoning_prefix}}\n- {{calibration_guidance}}\n- {{uncertainty_handling}}\n\nProvide your reasoning, then your final probability estimate as a percentage.",
+    "metadata": {
+        "description": "Template for generating binary forecasts",
+        "tags": ["binary", "forecast", "probability"]
+    }
+}'''
+        with open(template_file, "w", encoding="utf-8") as f:
+            f.write(template_content)
+
+except Exception as e:
+    import logging
+    logging.getLogger(__name__).error(f"Error setting up directories: {e}")
+# ===== END OF DIRECT FIX =====
+
     ConfidenceLevel,
     Evidence, 
     EvidenceType,
