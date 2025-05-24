@@ -74,9 +74,9 @@ class PersonalityManager:
                         default_config = {
                             "name": "default",
                             "description": "Default personality created at runtime",
-                            "reasoning_depth": "medium",
-                            "uncertainty_approach": "probabilistic",
-                            "thinking_style": "systematic",
+                            "reasoning_depth": "moderate",
+                            "uncertainty_approach": "balanced",
+                            "thinking_style": "analytical",
                             "expert_persona": "forecaster",
                             "temperature": 0.1
                         }
@@ -90,9 +90,9 @@ class PersonalityManager:
             default_config = {
                 "name": "minimal_default",
                 "description": "Minimal default personality created after error",
-                "reasoning_depth": "medium",
-                "uncertainty_approach": "probabilistic",
-                "thinking_style": "systematic",
+                "reasoning_depth": "moderate",
+                "uncertainty_approach": "balanced",
+                "thinking_style": "analytical",
                 "expert_persona": "forecaster",
                 "temperature": 0.1
             }
