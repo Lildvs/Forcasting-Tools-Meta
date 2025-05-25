@@ -1,0 +1,25 @@
+# Production requirements - pinned to exact versions for stability
+# Generated from Poetry lock file
+
+streamlit==1.20.0
+pandas==1.4.0
+plotly==5.10.0
+pydantic==2.0.0
+python-dotenv==1.0.0
+numpy==1.22.0
+matplotlib==3.5.0
+altair==5.0.0
+sqlitedict==2.0.0
+importlib-metadata==4.13.0
+typing-extensions==4.5.0
+PyYAML==6.0.0
+loguru==0.7.0
+psutil==5.9.0
+packaging==21.3
+sentry-sdk==1.16.0
+
+# Monitoring dependencies
+watchtower==2.0.1
+
+# Deployment dependencies
+gunicorn==20.1.0 

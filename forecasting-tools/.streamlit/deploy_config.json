@@ -1,0 +1,10 @@
+{
+  "main_module": "front_end/Home.py",
+  "branch": "main",
+  "environment_variables": {
+    "STREAMLIT_LOG_LEVEL": "info",
+    "STREAMLIT_SERVER_HEADLESS": "true",
+    "LOCAL_STREAMLIT_MODE": "false"
+  },
+  "entrypoint": "streamlit run front_end/Home.py"
+} 

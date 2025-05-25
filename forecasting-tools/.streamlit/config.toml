@@ -1,0 +1,35 @@
+[global]
+# Disable widget caching during development
+disableWidgetStateDuplication = false
+
+# Configure development and deployment settings
+runOnSave = true
+
+[server]
+# Port for local development (will be ignored in Streamlit Cloud)
+port = 8501
+enableCORS = false
+enableXsrfProtection = true
+headless = true  # Better for cloud deployment
+
+[browser]
+# Don't automatically open browser on startup (better for cloud)
+serverAddress = "localhost"
+gatherUsageStats = false  # Privacy
+
+[theme]
+# Streamlit theme settings
+primaryColor = "#0068c9"
+backgroundColor = "#f5f8fa"
+secondaryBackgroundColor = "#e9f1f7"
+textColor = "#262730"
+font = "sans serif"
+
+[logger]
+# Logging settings for cloud deployment
+level = "info"
+messageFormat = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+[client]
+# Increase message size for larger model outputs
+toolbarMode = "auto" 
