@@ -27,6 +27,7 @@ from forecasting_tools.data_models.questions import (
     NumericQuestion,
 )
 from forecasting_tools.forecast_bots.forecast_bot import ForecastBot
+from forecasting_tools.forecast_bots.official_bots.q2_template_bot import Q2TemplateBot2025
 from forecasting_tools.forecast_helpers.metaculus_api import MetaculusApi
 from forecasting_tools.forecast_helpers.perplexity_searcher import PerplexitySearcher
 from forecasting_tools.forecast_helpers.prediction_extractor import (
